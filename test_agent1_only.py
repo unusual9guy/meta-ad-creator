@@ -97,10 +97,27 @@ def test_agent1():
                 
                 if headline:
                     print(f"\n📰 Generated Headline: '{headline}'")
+                    if len(headline.strip()) < 3:
+                        print("⚠️ Warning: Headline appears to be too short or incomplete")
+                    # Check if headline is one-liner
+                    if '\n' in headline or len(headline.split()) > 8:
+                        print("⚠️ Warning: Headline should be a catchy one-liner (2-6 words)")
                 if footer:
                     print(f"\n📄 Generated Footer: '{footer}'")
+                    if len(footer.strip()) < 5:
+                        print("⚠️ Warning: Footer appears to be too short or incomplete")
+                    # Check if footer is one-liner
+                    if '\n' in footer or len(footer.split()) > 10:
+                        print("⚠️ Warning: Footer should be a catchy one-liner")
                 if limited_offer:
                     print(f"\n⏰ Generated Limited Offer: '{limited_offer}'")
+                    if len(limited_offer.strip()) < 3:
+                        print("⚠️ Warning: Limited offer appears to be too short or incomplete")
+                
+                # Check for incomplete text
+                if not headline or not footer or not limited_offer:
+                    print("\n⚠️ Warning: Some text elements appear to be missing or incomplete")
+                    print("This may cause issues with the final ad creative generation")
                 
                 # Ask user to review
                 print("\n🤔 Do you want to keep these generated texts?")
