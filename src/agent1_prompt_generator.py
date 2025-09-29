@@ -63,27 +63,30 @@ class PromptGeneratorAgent:
             "visual_hierarchy": "Arrange text elements harmoniously to guide the viewer's eye, maintaining product prominence against a clean background. Keep it organized and uncluttered.",
             "ratio": "1:1 (1080 x 1080 px)",
             "headline": {
-              "text": "[GENERATE COMPELLING HEADLINE BASED ON PRODUCT]",
+              "text": "[GENERATE CATCHY, ONE-LINER HEADLINE BASED ON PRODUCT - 2-6 WORDS, MEMORABLE AND IMPACTFUL]",
+              "style": "Use premium advertising fonts like those used by luxury brands - elegant serif fonts, sophisticated sans-serif, or refined script fonts. The typography should match high-end advertising standards. CRITICAL: Ensure correct spelling and grammar.",
               "placement": "Upper third of the image, rendered in a luxury serif or script font that is part of the scene's design."
             },
             "footer": {
-              "text": "[GENERATE COMPELLING FOOTER BASED ON PRODUCT]",
+              "text": "[GENERATE CATCHY, ONE-LINER FOOTER BASED ON PRODUCT - MEMORABLE AND PERSUASIVE]",
+              "style": "Use premium advertising fonts like those used by luxury brands - elegant serif fonts, sophisticated sans-serif, or refined script fonts. The typography should match high-end advertising standards. CRITICAL: Ensure correct spelling and grammar.",
               "placement": "Bottom third, using a refined, professional font that complements the overall aesthetic."
             },
             "pricing_display": {
+              "style": "Create a professional pricing badge with elegant design. Use premium advertising fonts like those used by luxury brands (e.g., elegant serif fonts, modern sans-serif with character, or sophisticated script fonts). The badge should have a subtle background, soft edges, and professional typography that matches high-end advertising.",
               "before_discount": {
                 "price": "[ORIGINAL PRICE]",
-                "style": "Clearly visible with a strike-through effect."
+                "style": "Display in a tasteful badge with strike-through effect, using premium advertising fonts. The badge should have subtle background and elegant typography."
               },
               "after_discount": {
                 "price": "[DISCOUNTED PRICE]",
-                "style": "Positioned directly below the original price, with emphasis."
+                "style": "Display in a prominent badge with emphasis, using premium advertising fonts. The badge should be visually appealing with professional typography and subtle background."
               },
-              "placement": "Integrate this pricing block logically within the layout, often near the product or footer."
+              "placement": "Integrate the pricing badge logically within the layout, often near the product or footer. The badge should look like professional advertising design, not plain text."
             },
             "limited_time_offer": {
               "text": "[GENERATE LIMITED TIME OFFER TEXT]",
-              "style": "A tastefully designed badge with soft edges, integrated into the composition.",
+              "style": "A tastefully designed badge with soft edges, using premium advertising fonts like those used by luxury brands. The badge should have elegant typography and professional design that matches high-end advertising standards.",
               "placement": "Top right or near pricing area."
             }
           },
@@ -96,6 +99,8 @@ class PromptGeneratorAgent:
             "**Realism:** The output must be indistinguishable from a professional photograph taken in a real environment. Think of high-end product photography with natural imperfections, realistic textures, and authentic lighting. Avoid flat, uniform backgrounds or obviously AI-generated patterns.",
             "**Composition:** Keep the design clean and organized. Only include headline, footer, price, and limited time offer. Avoid overcrowding with too many text elements.",
             "**Text Elements:** Focus on these 4 elements only: headline, footer, pricing, and limited time offer. Do not add problem statements, subheadings, or other text that would make the design look crowded.",
+            "**Typography Requirements:** Use premium advertising fonts like those used by luxury brands - elegant serif fonts, sophisticated sans-serif, or refined script fonts. All text elements should use professional typography that matches high-end advertising standards. Avoid plain, basic fonts.",
+            "**Pricing Badge Design:** The pricing must be displayed in a professional badge format, not as plain text. Use elegant typography and subtle background design that matches luxury brand advertising.",
             "**Professional Photography Feel:** The image should have the quality and feel of a real photograph taken by a professional photographer. Think of luxury brand photography with natural imperfections, realistic textures, and authentic lighting. Avoid overly perfect, sterile, or obviously AI-generated appearances."
           ]
         }
@@ -104,6 +109,17 @@ class PromptGeneratorAgent:
         Make it specific, actionable, and tailored for Meta ad creative generation.
         
         IMPORTANT: The input product image has no background. You must instruct the AI to CREATE a realistic, natural background that complements the product. The background should look like professional product photography, not AI-generated.
+        
+        TEXT GENERATION REQUIREMENTS:
+        - Generate complete, compelling text for ALL text elements
+        - Headline: Create a catchy, one-liner headline (2-6 words) that is memorable and impactful
+        - Footer: Create a catchy, one-liner footer that is persuasive and memorable
+        - Pricing: Include both original and discounted prices
+        - Limited offer: Create compelling limited time offer text
+        - Ensure ALL text is complete and not cut off
+        - Use premium advertising copy that matches luxury brands
+        - CRITICAL: Ensure ALL text has correct spelling and grammar - AI image generation often has spelling errors
+        - Make headlines and footers catchy, memorable one-liners that stick in the mind
         
         CRITICAL: You must return a complete, valid JSON object. Ensure all brackets, braces, and quotes are properly closed. The JSON must be parseable and complete.
         """
@@ -143,6 +159,17 @@ class PromptGeneratorAgent:
                         Please analyze this product image and generate a structured prompt for Google's Nano Banana model.
                         The product image has no background, so you must instruct the AI to CREATE a realistic, natural background that complements the product.
                         Include the 4 key elements: target audience, problem statement, emotional impact, and pricing.
+                        
+                        CRITICAL TEXT REQUIREMENTS:
+                        - Generate complete, compelling text for ALL text elements
+                        - Headline: Create a catchy, one-liner headline (2-6 words) that is memorable and impactful
+                        - Footer: Create a catchy, one-liner footer that is persuasive and memorable
+                        - Pricing: Include both original and discounted prices
+                        - Limited offer: Create compelling limited time offer text
+                        - Ensure ALL text is complete and not cut off
+                        - Use premium advertising copy that matches luxury brands
+                        - CRITICAL: Ensure ALL text has correct spelling and grammar - AI image generation often has spelling errors
+                        - Make headlines and footers catchy, memorable one-liners that stick in the mind
                         """
                     },
                     {
