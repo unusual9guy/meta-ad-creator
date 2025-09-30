@@ -212,9 +212,10 @@ class MasterOrchestrator:
                     else:
                         print("❌ Invalid choice. Please enter y or n.")
                         
-            except json.JSONDecodeError:
-                print("⚠️ Could not parse JSON prompt for review.")
+            except json.JSONDecodeError as e:
+                print(f"⚠️ Could not parse JSON prompt for review: {str(e)}")
                 print("📝 Proceeding with raw prompt output...")
+                print("💡 The prompt will still be used for ad generation, but custom text editing is not available.")
             
             # STEP 6: Ad Creative Generation
             print("\n🎨 STEP 6: Ad Creative Generation")
