@@ -1,3 +1,5 @@
 .env
 env.example
 __pycache__
+main.py
+debug_cropper.py
