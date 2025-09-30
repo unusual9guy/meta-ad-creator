@@ -46,7 +46,8 @@ class PromptGeneratorAgent:
         - NO generic Canva template appearance - must look premium and sophisticated
         - Professional editing quality with soft, luxurious feel
         - PERFECT spelling and grammar - NO spelling mistakes allowed
-        - Premium typography and layout that matches luxury brands
+        - CONSISTENT TYPOGRAPHY: Use PLAYFAIR DISPLAY FONT exclusively for ALL text elements
+        - CONSISTENT LAYOUT: Always use the same positioning and styling for consistency
         - Soft, professional lighting and shadows
         - High-end product photography aesthetic
         
@@ -73,29 +74,29 @@ class PromptGeneratorAgent:
             "ratio": "1:1 (1080 x 1080 px)",
             "headline": {
               "text": "[GENERATE CATCHY, ONE-LINER HEADLINE BASED ON PRODUCT - 2-6 WORDS, MEMORABLE AND IMPACTFUL]",
-              "style": "Use MODERN ELEGANT SERIF FONTS like Playfair Display, Bodoni Moda, or Trajan for luxury and sophistication. These fonts have high contrast between thick and thin strokes, adding refinement. For modern feel, consider Mafins or Monalisa. AVOID generic fonts like Arial, Times New Roman, or basic system fonts. NO drop shadows - use clean, well-chosen fonts that stand out with good contrast. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
-              "placement": "Upper third of the image, rendered in a modern elegant serif font that is part of the scene's design with professional editing and clean typography."
+              "style": "Use PLAYFAIR DISPLAY FONT exclusively for the headline. This elegant serif font conveys luxury and sophistication with high contrast between thick and thin strokes. Use consistent font weight and size. NO drop shadows - use clean, well-chosen typography that stands out with good contrast. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
+              "placement": "Upper third of the image, rendered in Playfair Display font that is part of the scene's design with professional editing and clean typography."
             },
             "footer": {
               "text": "[GENERATE CATCHY, ONE-LINER FOOTER BASED ON PRODUCT - MEMORABLE AND PERSUASIVE]",
-              "style": "Use CLEAN SANS-SERIF FONTS like Montserrat, Lato, or Roboto for excellent readability and modern contrast with the serif headline. This creates visual balance and professional typography pairing. AVOID generic fonts like Arial, Times New Roman, or basic system fonts. Use sophisticated, premium fonts that convey luxury and professionalism. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
-              "placement": "Bottom third, using a clean sans-serif font that complements the serif headline and creates professional visual balance."
+              "style": "Use PLAYFAIR DISPLAY FONT exclusively for the footer. This elegant serif font conveys luxury and sophistication with high contrast between thick and thin strokes. Use consistent font weight and size. AVOID generic fonts like Arial, Times New Roman, or basic system fonts. Use sophisticated, premium fonts that convey luxury and professionalism. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
+              "placement": "Bottom third, using Playfair Display font that complements the headline and creates professional visual balance."
             },
             "pricing_display": {
-              "style": "Create a CONSOLIDATED PRICING BADGE that groups the limited time offer and pricing information together. Use CLEAN SANS-SERIF FONTS like Montserrat, Lato, or Roboto for excellent readability. Place in BOTTOM-RIGHT CORNER to avoid obscuring the product. Use simple, clean text design instead of generic template badges. AVOID generic fonts like Arial, Times New Roman. The badge should have professional editing and premium aesthetics. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
+              "style": "Create a CONSOLIDATED PRICING BADGE that groups the limited time offer and pricing information together. Use PLAYFAIR DISPLAY FONT exclusively for all pricing text. Place in BOTTOM-RIGHT CORNER to avoid obscuring the product. Use simple, clean text design instead of generic template badges. AVOID generic fonts like Arial, Times New Roman. The badge should have professional editing and premium aesthetics. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
               "before_discount": {
                 "price": "[ORIGINAL PRICE]",
-                "style": "Display with strike-through effect using clean sans-serif typography. Use sophisticated, premium fonts that convey luxury and professionalism. The badge should have professional editing and elegant typography that looks professionally designed."
+                "style": "Display with strike-through effect using Playfair Display font. Use consistent font weight and size. The badge should have professional editing and elegant typography that looks professionally designed."
               },
               "after_discount": {
                 "price": "[DISCOUNTED PRICE]",
-                "style": "Display with emphasis using clean sans-serif typography. Use sophisticated, premium fonts that convey luxury and professionalism. The badge should be visually appealing with professional editing and sophisticated typography that matches high-end advertising standards."
+                "style": "Display with emphasis using Playfair Display font. Use consistent font weight and size. The badge should be visually appealing with professional editing and sophisticated typography that matches high-end advertising standards."
               },
               "placement": "BOTTOM-RIGHT CORNER in a consolidated badge that groups offer and pricing information together. This creates clearer visual hierarchy and less cluttered look."
             },
             "limited_time_offer": {
               "text": "[GENERATE LIMITED TIME OFFER TEXT]",
-              "style": "INTEGRATE with the consolidated pricing badge using CLEAN SANS-SERIF FONTS like Montserrat, Lato, or Roboto. Use simple, clean text design instead of generic template badges. Place directly above the price within the same elegantly designed container. AVOID generic fonts like Arial, Times New Roman. Use sophisticated, premium fonts that convey luxury and professionalism. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
+              "style": "INTEGRATE with the consolidated pricing badge using PLAYFAIR DISPLAY FONT exclusively. Use simple, clean text design instead of generic template badges. Place directly above the price within the same elegantly designed container. Use consistent font weight and size. AVOID generic fonts like Arial, Times New Roman. Use sophisticated, premium fonts that convey luxury and professionalism. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
               "placement": "INTEGRATED with pricing badge in bottom-right corner for consolidated, less cluttered design."
             }
           },
@@ -108,7 +109,7 @@ class PromptGeneratorAgent:
             "**LUXURY BRAND AESTHETIC:** The output must look like a premium luxury brand's marketing campaign. Think of high-end product photography with sophisticated editing, soft shadows, and luxurious aesthetics. Avoid generic Canva template looks - this should look like it was created by a luxury brand's creative team.",
             "**Composition:** Keep the design clean and organized. Only include headline, footer, price, and limited time offer. Avoid overcrowding with too many text elements.",
             "**Text Elements:** Focus on these 4 elements only: headline, footer, pricing, and limited time offer. Do not add problem statements, subheadings, or other text that would make the design look crowded.",
-            "**PREMIUM TYPOGRAPHY REQUIREMENTS:** Use PREMIUM LUXURY BRAND TYPOGRAPHY like Chanel, Louis Vuitton, or Apple - elegant serif fonts, sophisticated sans-serif, or refined script fonts. AVOID generic, unprofessional fonts like Arial, Times New Roman, or basic system fonts. Use sophisticated, premium fonts that convey luxury and professionalism. All text elements should use professional typography that matches high-end advertising standards. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
+            "**CONSISTENT TYPOGRAPHY REQUIREMENTS:** Use PLAYFAIR DISPLAY FONT exclusively for ALL text elements (headline, footer, pricing, limited offer). This ensures consistent, professional typography throughout the ad. Use consistent font weight and size across all elements. AVOID generic, unprofessional fonts like Arial, Times New Roman, or basic system fonts. All text elements should use professional typography that matches high-end advertising standards. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
             "**PREMIUM PRICING BADGE DESIGN:** The pricing must be displayed in a PREMIUM LUXURY BADGE format with sophisticated design, soft shadows, and professional editing. Use high-end typography like luxury brands. The badge should have premium aesthetics that match luxury brand advertising standards.",
             "**PROFESSIONAL EDITING FEEL:** The image should have the quality and feel of a professional photoshoot edited by a luxury brand's creative team. Think of premium product photography with sophisticated editing, soft shadows, and luxurious aesthetics. Avoid generic Canva template looks - this should look like it was created by a premium creative agency."
           ]
