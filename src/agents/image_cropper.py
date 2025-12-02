@@ -58,7 +58,7 @@ class ImageCropperAgent:
             # Step 4: Generate output path
             if output_path is None:
                 # Create cropped_images directory
-                cropped_dir = "cropped_images"
+                cropped_dir = "data/output/cropped"
                 os.makedirs(cropped_dir, exist_ok=True)
                 
                 base_name = os.path.splitext(os.path.basename(image_path))[0]
@@ -239,7 +239,7 @@ class ImageCropperAgent:
             # Already square
             if output_path is None:
                 # Create cropped_images directory
-                cropped_dir = "cropped_images"
+                cropped_dir = "data/output/cropped"
                 os.makedirs(cropped_dir, exist_ok=True)
                 
                 base_name = os.path.splitext(os.path.basename(image_path))[0]
@@ -287,7 +287,7 @@ class ImageCropperAgent:
             "crop_coordinates": (left, top, right, bottom)
         }
     
-    def crop_multiple_images(self, image_paths: list, output_dir: str = "cropped_images") -> Dict[str, Any]:
+    def crop_multiple_images(self, image_paths: list, output_dir: str = "data/output/cropped") -> Dict[str, Any]:
         """
         Crop multiple images to 1:1 ratio
         

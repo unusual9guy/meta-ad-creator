@@ -41,7 +41,7 @@ class CreativeGeneratorAgent:
         """
         try:
             # Create output directory if it doesn't exist
-            output_dir = "generated_images"
+            output_dir = "data/output/creatives"
             os.makedirs(output_dir, exist_ok=True)
             
             # Generate output filename based on product description

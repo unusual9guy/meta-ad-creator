@@ -33,7 +33,7 @@ class BackgroundRemoverAgent:
         
         Args:
             image_path: Path to the input image
-            output_path: Optional output path (if None, saves to white_bg_images/)
+            output_path: Optional output path (if None, saves to data/output/white_backgrounds/)
         
         Returns:
             Dictionary containing the result
@@ -41,7 +41,7 @@ class BackgroundRemoverAgent:
         try:
             # Create output directory
             if output_path is None:
-                white_bg_dir = "white_bg_images"
+                white_bg_dir = "data/output/white_backgrounds"
                 os.makedirs(white_bg_dir, exist_ok=True)
                 
                 base_name = os.path.splitext(os.path.basename(image_path))[0]
@@ -125,7 +125,7 @@ class BackgroundRemoverAgent:
                 }
             }
     
-    def remove_background_batch(self, image_paths: list, output_dir: str = "white_bg_images") -> Dict[str, Any]:
+    def remove_background_batch(self, image_paths: list, output_dir: str = "data/output/white_backgrounds") -> Dict[str, Any]:
         """
         Remove backgrounds from multiple images
         
