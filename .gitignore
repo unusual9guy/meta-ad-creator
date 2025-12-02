@@ -6,3 +6,5 @@ debug_cropper.py
 streamlit_app.py
 /cropped_images
 /generated_images
+/white_bg_images
+/temp_uploads
