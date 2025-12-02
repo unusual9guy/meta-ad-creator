@@ -46,10 +46,11 @@ class PromptGeneratorAgent:
         - NO generic Canva template appearance - must look premium and sophisticated
         - Professional editing quality with soft, luxurious feel
         - PERFECT spelling and grammar - NO spelling mistakes allowed
-        - CONSISTENT TYPOGRAPHY: Use PLAYFAIR DISPLAY FONT exclusively for ALL text elements
-        - CONSISTENT LAYOUT: Always use the same positioning and styling for consistency
+        - CONSISTENT TYPOGRAPHY: Use the specified fonts in the JSON font fields - DO NOT PRINT FONT NAMES AS TEXT
+        - CONSISTENT LAYOUT: Always use the same positioning and styling for consistency across all generated ads
         - Soft, professional lighting and shadows
         - High-end product photography aesthetic
+        - Stick to 3 fonts only for brand cohesion
         
         You must generate a JSON prompt in this EXACT format:
         {
@@ -73,30 +74,36 @@ class PromptGeneratorAgent:
             "visual_hierarchy": "Arrange text elements harmoniously to guide the viewer's eye, maintaining product prominence against a clean background. Keep it organized and uncluttered.",
             "ratio": "1:1 (1080 x 1080 px)",
             "headline": {
-              "text": "[GENERATE CATCHY, ONE-LINER HEADLINE BASED ON PRODUCT - 2-6 WORDS, MEMORABLE AND IMPACTFUL]",
-              "style": "Use PLAYFAIR DISPLAY FONT exclusively for the headline. This elegant serif font conveys luxury and sophistication with high contrast between thick and thin strokes. Use consistent font weight and size. NO drop shadows - use clean, well-chosen typography that stands out with good contrast. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
-              "placement": "Upper third of the image, rendered in Playfair Display font that is part of the scene's design with professional editing and clean typography."
+              "text": "[GENERATE CATCHY, ONE-LINER HEADLINE BASED ON PRODUCT - 2-6 WORDS, MEMORABLE AND IMPACTFUL - DISPLAY IN ALL CAPS]",
+              "font": "Calgary",
+              "style": "Timeless, elegant font perfect for luxury product names and main headlines. Display the headline in ALL CAPS for maximum impact. Use clean, well-chosen typography that stands out with good contrast. NO drop shadows. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
+              "placement": "Upper third of the image with professional editing and clean typography."
             },
             "footer": {
               "text": "[GENERATE CATCHY, ONE-LINER FOOTER BASED ON PRODUCT - MEMORABLE AND PERSUASIVE]",
-              "style": "Use PLAYFAIR DISPLAY FONT exclusively for the footer. This elegant serif font conveys luxury and sophistication with high contrast between thick and thin strokes. Use consistent font weight and size. AVOID generic fonts like Arial, Times New Roman, or basic system fonts. Use sophisticated, premium fonts that convey luxury and professionalism. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
-              "placement": "Bottom third, using Playfair Display font that complements the headline and creates professional visual balance."
+              "font": "Tan Pearl",
+              "style": "Trendy, clean font excellent for footers and taglines. Use consistent font weight and size. AVOID generic fonts. Use sophisticated, premium fonts that convey luxury and professionalism. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
+              "placement": "Bottom third, creating professional visual balance with the Calgary headline."
             },
             "pricing_display": {
-              "style": "Create a CONSOLIDATED PRICING BADGE that groups the limited time offer and pricing information together. Use PLAYFAIR DISPLAY FONT exclusively for all pricing text. Place in BOTTOM-RIGHT CORNER to avoid obscuring the product. Use simple, clean text design instead of generic template badges. AVOID generic fonts like Arial, Times New Roman. The badge should have professional editing and premium aesthetics. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
+              "font": "RoxboroughCF",
+              "style": "Create a CONSOLIDATED PRICING BADGE that groups the limited time offer and pricing information together. Use slightly BOLDER weight for clarity and hierarchy. Place in BOTTOM-RIGHT CORNER to avoid obscuring the product. Use simple, clean text design instead of generic template badges. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
               "before_discount": {
                 "price": "[ORIGINAL PRICE]",
-                "style": "Display with strike-through effect using Playfair Display font. Use consistent font weight and size. The badge should have professional editing and elegant typography that looks professionally designed."
+                "font": "RoxboroughCF",
+                "style": "Display with strike-through effect. Use consistent font weight and size. The badge should have professional editing and elegant typography that looks professionally designed."
               },
               "after_discount": {
                 "price": "[DISCOUNTED PRICE]",
-                "style": "Display with emphasis using Playfair Display font. Use consistent font weight and size. The badge should be visually appealing with professional editing and sophisticated typography that matches high-end advertising standards."
+                "font": "RoxboroughCF",
+                "style": "Display with emphasis using BOLD weight for clear visibility. Use consistent font size. The badge should be visually appealing with professional editing and sophisticated typography that matches high-end advertising standards."
               },
               "placement": "BOTTOM-RIGHT CORNER in a consolidated badge that groups offer and pricing information together. This creates clearer visual hierarchy and less cluttered look."
             },
             "limited_time_offer": {
               "text": "[GENERATE LIMITED TIME OFFER TEXT]",
-              "style": "INTEGRATE with the consolidated pricing badge using PLAYFAIR DISPLAY FONT exclusively. Use simple, clean text design instead of generic template badges. Place directly above the price within the same elegantly designed container. Use consistent font weight and size. AVOID generic fonts like Arial, Times New Roman. Use sophisticated, premium fonts that convey luxury and professionalism. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
+              "font": "RoxboroughCF",
+              "style": "INTEGRATE with the consolidated pricing badge. Use simple, clean text design instead of generic template badges. Place directly above the price within the same elegantly designed container. Use consistent font weight and size. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
               "placement": "INTEGRATED with pricing badge in bottom-right corner for consolidated, less cluttered design."
             }
           },
@@ -109,7 +116,7 @@ class PromptGeneratorAgent:
             "**LUXURY BRAND AESTHETIC:** The output must look like a premium luxury brand's marketing campaign. Think of high-end product photography with sophisticated editing, soft shadows, and luxurious aesthetics. Avoid generic Canva template looks - this should look like it was created by a luxury brand's creative team.",
             "**Composition:** Keep the design clean and organized. Only include headline, footer, price, and limited time offer. Avoid overcrowding with too many text elements.",
             "**Text Elements:** Focus on these 4 elements only: headline, footer, pricing, and limited time offer. Do not add problem statements, subheadings, or other text that would make the design look crowded.",
-            "**CONSISTENT TYPOGRAPHY REQUIREMENTS:** Use PLAYFAIR DISPLAY FONT exclusively for ALL text elements (headline, footer, pricing, limited offer). This ensures consistent, professional typography throughout the ad. Use consistent font weight and size across all elements. AVOID generic, unprofessional fonts like Arial, Times New Roman, or basic system fonts. All text elements should use professional typography that matches high-end advertising standards. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
+            "**CONSISTENT TYPOGRAPHY REQUIREMENTS - CLASSIC LUXURY PAIRING:** Use the specified fonts in the JSON 'font' fields for each text element. The fonts are: Calgary for headers (ALL CAPS), RoxboroughCF for pricing (bold weight), and Tan Pearl for footer. Each element has a 'font' field that specifies which font to use. DO NOT print the font names in the actual text content. Generate actual product headlines like 'ELEGANCE UNVEILED', footers like 'Adorn Your Home with Distinction', and pricing like 'Rs. 1899' - NOT font names like 'Calgary' or 'Tan Pearl'. Stick to these 3 fonts only for brand cohesion and visual elegance. CRITICAL: PERFECT spelling and grammar - NO mistakes allowed.",
             "**PREMIUM PRICING BADGE DESIGN:** The pricing must be displayed in a PREMIUM LUXURY BADGE format with sophisticated design, soft shadows, and professional editing. Use high-end typography like luxury brands. The badge should have premium aesthetics that match luxury brand advertising standards.",
             "**PROFESSIONAL EDITING FEEL:** The image should have the quality and feel of a professional photoshoot edited by a luxury brand's creative team. Think of premium product photography with sophisticated editing, soft shadows, and luxurious aesthetics. Avoid generic Canva template looks - this should look like it was created by a premium creative agency."
           ]
@@ -133,6 +140,10 @@ class PromptGeneratorAgent:
         - All text should look professionally designed and edited, not generic Canva templates
         
         CRITICAL: You must return a complete, valid JSON object. Ensure all brackets, braces, and quotes are properly closed. The JSON must be parseable and complete.
+        
+        **ABSOLUTELY CRITICAL: DO NOT PRINT FONT NAMES AS TEXT IN THE GENERATED IMAGE.**
+        **The font field specifies which font to USE, not what text to DISPLAY.**
+        **Generate actual product headlines, footers, and pricing text - NOT font names.**
         """
     
     def encode_image(self, image_path: str) -> str:
