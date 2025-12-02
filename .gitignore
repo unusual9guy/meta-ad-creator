@@ -1,11 +1,24 @@
 .env
-env.example
 __pycache__
-main.py
-debug_cropper.py
-streamlit_app.py
-/cropped_images
-/generated_images
-/white_bg_images
-/temp_uploads
-/old tests
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# Data output directories
+/data/output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
