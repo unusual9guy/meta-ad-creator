@@ -4,3 +4,5 @@ __pycache__
 main.py
 debug_cropper.py
 streamlit_app.py
+/cropped_images
+/generated_images
