@@ -27,7 +27,7 @@ class CreativeGeneratorAgent:
         
         self.client = genai.Client(api_key=self.api_key)
     
-    def generate_creative(self, image_path: str, prompt: str, product_description: str = "") -> Dict[str, Any]:
+    def generate_creative(self, image_path: str, prompt: str, product_description: str = "", logo_path: Optional[str] = None) -> Dict[str, Any]:
         """
         Generate Meta ad creative by feeding prompt directly to Nano Banana
         
@@ -35,6 +35,7 @@ class CreativeGeneratorAgent:
             image_path: Path to the product image
             prompt: Structured prompt from Agent 1
             product_description: Product description for naming
+            logo_path: Optional path to company logo image
         
         Returns:
             Dictionary containing the result
@@ -56,13 +57,19 @@ class CreativeGeneratorAgent:
             
             output_path = os.path.join(output_dir, filename)
             
-            # Load the image
+            # Load the images
             image = Image.open(image_path)
+            contents = [prompt, image]
             
-            # Feed prompt directly to Nano Banana
+            # Add logo if provided
+            if logo_path and os.path.exists(logo_path):
+                logo_image = Image.open(logo_path)
+                contents.append(logo_image)
+            
+            # Feed prompt and images directly to Nano Banana
             response = self.client.models.generate_content(
                 model="gemini-2.5-flash-image-preview",
-                contents=[prompt, image],
+                contents=contents,
             )
             
             # Process the response
