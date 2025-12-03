@@ -34,7 +34,7 @@ class PromptGeneratorAgent:
             model="gemini-2.5-flash-image-preview",
             google_api_key=self.api_key,
             temperature=0.7,
-            max_tokens=2000
+            max_tokens=3000  # Increased to prevent JSON truncation
         )
     
     def _build_system_prompt(self, primary_font: Optional[str] = None, 
@@ -278,11 +278,19 @@ TEXT GENERATION REQUIREMENTS:
 - CRITICAL: Ensure ALL text has correct spelling and grammar - AI image generation often has spelling errors
 - Make headlines and taglines catchy, memorable one-liners that stick in the mind
 
-CRITICAL: You must return a complete, valid JSON object. Ensure all brackets, braces, and quotes are properly closed. The JSON must be parseable and complete.
-
-**ABSOLUTELY CRITICAL: DO NOT PRINT FONT NAMES AS TEXT IN THE GENERATED IMAGE.**
-**The font field specifies which font to USE, not what text to DISPLAY.**
-**Generate actual product headlines, taglines, and text - NOT font names.**"""
+        CRITICAL JSON REQUIREMENTS:
+        - You must return a complete, valid JSON object
+        - Ensure all brackets, braces, and quotes are properly closed
+        - Escape all quotes inside string values using backslash: \"
+        - Do not include newlines or unescaped special characters in string values
+        - The JSON must be parseable and complete
+        - If text contains quotes, escape them: \"example text\"
+        - If text contains newlines, use \\n or keep on single line
+        - Ensure all string values are properly quoted and escaped
+        
+        **ABSOLUTELY CRITICAL: DO NOT PRINT FONT NAMES AS TEXT IN THE GENERATED IMAGE.**
+        **The font field specifies which font to USE, not what text to DISPLAY.**
+        **Generate actual product headlines, taglines, and text - NOT font names.**"""
         
         return system_prompt
     
