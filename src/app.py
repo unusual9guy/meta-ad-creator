@@ -11,14 +11,10 @@ from PIL import Image
 from dotenv import load_dotenv
 
 # Import agents
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
-from agents import (
-    BackgroundRemoverAgent,
-    ImageCropperAgent,
-    PromptGeneratorAgent,
-    CreativeGeneratorAgent
-)
+from agents.background_remover import BackgroundRemoverAgent
+from agents.image_cropper import ImageCropperAgent
+from agents.prompt_generator import PromptGeneratorAgent
+from agents.creative_generator import CreativeGeneratorAgent
 
 load_dotenv()
 
@@ -318,6 +314,16 @@ if 'final_creative_path' not in st.session_state:
     st.session_state.final_creative_path = None
 if 'workflow_step' not in st.session_state:
     st.session_state.workflow_step = 'upload'
+if 'logo_path' not in st.session_state:
+    st.session_state.logo_path = None
+if 'primary_font' not in st.session_state:
+    st.session_state.primary_font = None
+if 'secondary_font' not in st.session_state:
+    st.session_state.secondary_font = None
+if 'pricing_font' not in st.session_state:
+    st.session_state.pricing_font = None
+if 'include_price' not in st.session_state:
+    st.session_state.include_price = True
 
 def reset_workflow():
     """Reset the workflow to start over"""
@@ -326,6 +332,11 @@ def reset_workflow():
     st.session_state.cropped_path = None
     st.session_state.prompt = None
     st.session_state.final_creative_path = None
+    st.session_state.logo_path = None
+    st.session_state.primary_font = None
+    st.session_state.secondary_font = None
+    st.session_state.pricing_font = None
+    st.session_state.include_price = True
 
 def save_uploaded_file(uploaded_file):
     """Save uploaded file to temporary directory"""
@@ -524,24 +535,98 @@ elif st.session_state.workflow_step == 'prompt_input':
             help="Who is this product for?"
         )
         
-        price = st.text_input(
-            "💰 Price Information",
-            placeholder="e.g., before 2999 Rs after 1899 Rs",
-            help="Original price and discounted price"
+        st.markdown("---")
+        st.markdown("**🎨 Typography Settings**")
+        
+        primary_font = st.text_input(
+            "📝 Primary Font (Required)",
+            placeholder="e.g., Playfair Display, Calgary, Montserrat",
+            help="Enter the exact font name you want to use for headlines and main text"
         )
+        
+        secondary_font = st.text_input(
+            "📝 Secondary Font (Optional)",
+            placeholder="e.g., Lato, Roboto, Tan Pearl",
+            help="Enter font name for taglines and secondary text (leave empty to use primary font)"
+        )
+        
+        include_price = st.checkbox(
+            "💰 Include Price Tag",
+            value=True,
+            help="Check to include pricing information in the ad"
+        )
+        
+        if include_price:
+            price = st.text_input(
+                "💰 Price Information",
+                placeholder="e.g., before 2999 Rs after 1899 Rs",
+                help="Original price and discounted price"
+            )
+            pricing_font = st.text_input(
+                "📝 Pricing Font (Optional)",
+                placeholder="e.g., RoxboroughCF, Montserrat Bold",
+                help="Enter font name for pricing text (leave empty to use primary font in bold)"
+            )
+        else:
+            price = ""
+            pricing_font = ""
+        
+        st.markdown("---")
+        st.markdown("**🏢 Branding (Optional)**")
+        
+        include_logo = st.checkbox(
+            "📎 Include Company Logo",
+            value=False,
+            help="Check to include your company logo at the top of the ad"
+        )
+        
+        if include_logo:
+            logo_file = st.file_uploader(
+                "📎 Upload Company Logo",
+                type=['png', 'jpg', 'jpeg', 'svg'],
+                help="Upload your company logo (PNG with transparency preferred)"
+            )
+            
+            if logo_file is not None:
+                # Save logo to temp directory
+                logo_dir = "data/output/temp"
+                os.makedirs(logo_dir, exist_ok=True)
+                timestamp = int(time.time())
+                logo_extension = os.path.splitext(logo_file.name)[1]
+                logo_filename = f"logo_{timestamp}{logo_extension}"
+                logo_path = os.path.join(logo_dir, logo_filename)
+                
+                with open(logo_path, "wb") as f:
+                    f.write(logo_file.getbuffer())
+                
+                st.session_state.logo_path = logo_path
+                
+                # Show logo preview
+                logo_image = Image.open(logo_file)
+                st.image(logo_image, caption="Logo Preview", width=200)
+        else:
+            st.session_state.logo_path = None
         
         st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
         
         submitted = st.form_submit_button("🚀 Generate Prompt", width='stretch', type="primary")
         
         if submitted:
-            if not product_description or not target_audience or not price:
-                st.warning("⚠️ Please fill in all fields to continue")
+            if not product_description or not target_audience:
+                st.warning("⚠️ Please fill in product description and target audience")
+            elif not primary_font:
+                st.warning("⚠️ Please provide a primary font name")
+            elif include_price and not price:
+                st.warning("⚠️ Please provide price information if price tag is enabled")
             else:
                 st.session_state.workflow_step = 'generating_prompt'
                 st.session_state.product_description = product_description
                 st.session_state.target_audience = target_audience
-                st.session_state.price = price
+                st.session_state.price = price if include_price else ""
+                st.session_state.primary_font = primary_font
+                st.session_state.secondary_font = secondary_font if secondary_font else None
+                st.session_state.pricing_font = pricing_font if (include_price and pricing_font) else None
+                st.session_state.include_price = include_price
                 st.rerun()
     
     st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
@@ -569,13 +654,18 @@ elif st.session_state.workflow_step == 'generating_prompt':
         
         user_inputs = {
             "target_audience": st.session_state.target_audience,
-            "price": st.session_state.price
+            "price": st.session_state.price if st.session_state.include_price else None
         }
         
         prompt_result = prompt_generator.generate_prompt(
             st.session_state.cropped_path,
             st.session_state.product_description,
-            user_inputs
+            user_inputs,
+            primary_font=st.session_state.primary_font,
+            secondary_font=st.session_state.secondary_font,
+            pricing_font=st.session_state.pricing_font,
+            include_price=st.session_state.include_price,
+            logo_path=st.session_state.logo_path
         )
         
         if not prompt_result["success"]:
@@ -616,21 +706,62 @@ elif st.session_state.workflow_step == 'prompt_review':
         try:
             prompt_json = json.loads(st.session_state.prompt)
             
-            headline = prompt_json.get("typography_and_layout", {}).get("headline", {}).get("text", "")
-            footer = prompt_json.get("typography_and_layout", {}).get("footer", {}).get("text", "")
-            limited_offer = prompt_json.get("typography_and_layout", {}).get("limited_time_offer", {}).get("text", "")
+            # Extract text elements from new structure
+            text_elements = prompt_json.get("typography_and_layout", {}).get("text_elements", [])
+            
+            # Find headline, tagline, and CTA
+            headline = ""
+            tagline = ""
+            cta_text = ""
+            limited_offer = ""
+            
+            for element in text_elements:
+                if element.get("type") == "text":
+                    if element.get("hierarchy") == "primary":
+                        headline = element.get("text", "")
+                    elif element.get("hierarchy") == "secondary":
+                        tagline = element.get("text", "")
+                elif element.get("type") == "cta_button":
+                    cta_text = element.get("text", "")
+            
+            # Check for limited offer in pricing section
+            limited_offer_obj = prompt_json.get("typography_and_layout", {}).get("limited_time_offer")
+            if limited_offer_obj:
+                limited_offer = limited_offer_obj.get("text", "")
             
             st.markdown("**✏️ Edit Text Elements**")
             st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
             
             edited_headline = st.text_input("📰 Headline", value=headline)
-            edited_footer = st.text_input("📄 Footer", value=footer)
-            edited_offer = st.text_input("⏰ Limited Time Offer", value=limited_offer)
+            edited_tagline = st.text_input("📝 Tagline", value=tagline)
+            edited_cta = st.text_input("🔘 Call-to-Action Button", value=cta_text)
             
-            if edited_headline != headline or edited_footer != footer or edited_offer != limited_offer:
-                prompt_json["typography_and_layout"]["headline"]["text"] = edited_headline
-                prompt_json["typography_and_layout"]["footer"]["text"] = edited_footer
-                prompt_json["typography_and_layout"]["limited_time_offer"]["text"] = edited_offer
+            if st.session_state.include_price:
+                edited_offer = st.text_input("⏰ Limited Time Offer", value=limited_offer)
+            else:
+                edited_offer = ""
+            
+            # Update JSON if edited
+            updated = False
+            for i, element in enumerate(text_elements):
+                if element.get("type") == "text":
+                    if element.get("hierarchy") == "primary" and edited_headline != headline:
+                        text_elements[i]["text"] = edited_headline
+                        updated = True
+                    elif element.get("hierarchy") == "secondary" and edited_tagline != tagline:
+                        text_elements[i]["text"] = edited_tagline
+                        updated = True
+                elif element.get("type") == "cta_button" and edited_cta != cta_text:
+                    text_elements[i]["text"] = edited_cta
+                    updated = True
+            
+            if st.session_state.include_price and edited_offer != limited_offer:
+                if limited_offer_obj:
+                    prompt_json["typography_and_layout"]["limited_time_offer"]["text"] = edited_offer
+                    updated = True
+            
+            if updated:
+                prompt_json["typography_and_layout"]["text_elements"] = text_elements
                 st.session_state.prompt = json.dumps(prompt_json, indent=2)
             
             st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
@@ -688,7 +819,8 @@ elif st.session_state.workflow_step == 'generating_creative':
         creative_result = creative_generator.generate_creative(
             st.session_state.cropped_path,
             st.session_state.prompt,
-            st.session_state.product_description
+            st.session_state.product_description,
+            logo_path=st.session_state.logo_path
         )
         
         if not creative_result["success"]:
