@@ -39,13 +39,23 @@ def test_font_integration():
         
         # Test 1: Primary font only
         print("\n[Test 1] Testing with primary font only...")
-        result1 = prompt_generator.generate_prompt(
+        try:
+            result1 = prompt_generator.generate_prompt(
             image_path=test_image,
             description="Premium wooden photo frame with mother-of-pearl inlay",
             user_inputs={"target_audience": "Home decor enthusiasts", "price": "2999 Rs before, 1899 Rs after"},
-            primary_font="Playfair Display",
-            include_price=True
-        )
+                primary_font="Playfair Display",
+                include_price=True
+            )
+        except Exception as e:
+            error_msg = str(e)
+            if "quota" in error_msg.lower() or "429" in error_msg or "ResourceExhausted" in error_msg:
+                print(f"⚠️ QUOTA/RATE LIMIT ERROR: {error_msg[:200]}")
+                print("\nThis is not a test failure - it's an API quota issue.")
+                print("Please wait for quota to reset or upgrade your API plan.")
+                return False
+            else:
+                raise
         
         if result1["success"]:
             print("✅ Test 1 PASSED: Primary font integration works")

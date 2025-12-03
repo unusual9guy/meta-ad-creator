@@ -39,15 +39,28 @@ def test_new_prompt_structure():
         prompt_generator = PromptGeneratorAgent(api_key)
         
         print("\n[Test] Generating prompt with new structure...")
-        result = prompt_generator.generate_prompt(
+        try:
+            result = prompt_generator.generate_prompt(
             image_path=test_image,
             description="Premium wooden photo frame with mother-of-pearl inlay",
             user_inputs={"target_audience": "Home decor enthusiasts", "price": "2999 Rs before, 1899 Rs after"},
             primary_font="Calgary",
             secondary_font="Tan Pearl",
-            pricing_font="RoxboroughCF",
-            include_price=True
-        )
+                pricing_font="RoxboroughCF",
+                include_price=True
+            )
+        except Exception as e:
+            error_msg = str(e)
+            if "quota" in error_msg.lower() or "429" in error_msg or "ResourceExhausted" in error_msg:
+                print(f"⚠️ QUOTA/RATE LIMIT ERROR: {error_msg[:200]}")
+                print("\nThis is not a test failure - it's an API quota issue.")
+                print("Possible solutions:")
+                print("  1. Wait for quota to reset (check the retry_delay in the error)")
+                print("  2. Upgrade your Google API plan")
+                print("  3. Check if gemini-2.5-flash-image-preview is available on your tier")
+                return False
+            else:
+                raise
         
         if not result["success"]:
             print(f"❌ Prompt generation failed: {result.get('error', 'Unknown error')}")
