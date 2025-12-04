@@ -816,11 +816,21 @@ elif st.session_state.workflow_step == 'generating_creative':
         api_key = os.getenv("GOOGLE_API_KEY")
         creative_generator = CreativeGeneratorAgent(api_key)
         
+        # Collect font names to strip from prompt
+        font_names_to_strip = []
+        if st.session_state.primary_font:
+            font_names_to_strip.append(st.session_state.primary_font)
+        if st.session_state.secondary_font:
+            font_names_to_strip.append(st.session_state.secondary_font)
+        if st.session_state.pricing_font:
+            font_names_to_strip.append(st.session_state.pricing_font)
+        
         creative_result = creative_generator.generate_creative(
             st.session_state.cropped_path,
             st.session_state.prompt,
             st.session_state.product_description,
-            logo_path=st.session_state.logo_path
+            logo_path=st.session_state.logo_path,
+            font_names=font_names_to_strip if font_names_to_strip else None
         )
         
         if not creative_result["success"]:
