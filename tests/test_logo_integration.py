@@ -168,7 +168,8 @@ def test_logo_integration():
             image_path=test_image,
             prompt=result1["prompt"],
             product_description="Premium wooden photo frame",
-            logo_path=logo_path
+            logo_path=logo_path,
+            font_names=["Calgary"]  # Font used in test
         )
         
         if creative_result["success"]:
@@ -185,7 +186,8 @@ def test_logo_integration():
             image_path=test_image,
             prompt=result2["prompt"],
             product_description="Premium wooden photo frame",
-            logo_path=None
+            logo_path=None,
+            font_names=["Calgary"]  # Font used in test
         )
         
         if creative_result2["success"]:
