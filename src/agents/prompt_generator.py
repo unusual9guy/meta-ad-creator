@@ -5,6 +5,8 @@ Enhanced with user-provided fonts, logo support, and flexible text placement
 """
 
 import base64
+import json
+import re
 from typing import Dict, Any, Optional
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.schema import HumanMessage, SystemMessage
@@ -128,7 +130,15 @@ CRITICAL QUALITY REQUIREMENTS:
 - Apply subtle color grading, soft shadows, natural highlights, and realistic depth of field blur
 - PERFECT spelling and grammar - NO spelling mistakes allowed
 - Use EXACTLY the fonts specified by the user - DO NOT substitute or modify font names
-- DO NOT PRINT FONT NAMES AS TEXT IN THE GENERATED IMAGE - use the fonts, don't display the font names
+
+**ABSOLUTELY CRITICAL - FONT USAGE:**
+- The "font" field in JSON is a TECHNICAL SPECIFICATION for which font to USE, NOT text to DISPLAY
+- NEVER print the font name (e.g., "Tan Pearl", "Calgary", "RoxboroughCF") as visible text in the image
+- The font name should ONLY appear in the JSON "font" field as a specification
+- Generate actual product text (headlines, taglines, etc.) - NOT font names
+- Example: If font is "Tan Pearl", use that font to render "ELEGANCE UNVEILED" - DO NOT display "Tan Pearl" as text
+- WRONG: Displaying "Tan Pearl" or "Calgary" as text in the image
+- CORRECT: Using Tan Pearl font to display "ELEGANCE UNVEILED" or "Crafted Perfection"
 
 {font_instructions_processed}
 
@@ -160,12 +170,14 @@ You must generate a JSON prompt in this EXACT format:
   "typography_and_layout": {{
     "style": "Clean, minimal design with strategic text placement. Text elements can be placed anywhere for optimal visual balance. All text must be artistically integrated into the composition as part of a professional graphic design layout, not as simple text overlays.",
     "visual_hierarchy": "Follow top-to-bottom hierarchy: Logo (if present) → Headline → Tagline → Body Text → Product → Features → CTA Button. Maintain 10% margin from all edges for text elements. Ensure text doesn't overlap with product unless intentional design choice.",
-    "ratio": "1:1 (1080 x 1080 px)",
+    "ratio": "MANDATORY 1:1 SQUARE (1080 x 1080 px) - Width MUST equal Height",
     "text_elements": [
       {{
         "type": "text",
-        "text": "[GENERATE CATCHY HEADLINE - 2-6 WORDS, MEMORABLE AND IMPACTFUL]",
+        "text": "[GENERATE CATCHY HEADLINE - 2-6 WORDS, MEMORABLE AND IMPACTFUL - MUST BE DIFFERENT FROM FONT NAME]",
         "font": "{primary_font or 'professional serif or sans-serif'}",
+        "font_instruction": "USE THIS FONT TO RENDER THE TEXT ABOVE - THE TEXT FIELD MUST CONTAIN PRODUCT COPY, NOT THE FONT NAME",
+        "warning": "DO NOT PUT THE FONT NAME IN THE TEXT FIELD - GENERATE ACTUAL PRODUCT HEADLINE TEXT",
         "placement": {{
           "position": "top-center",
           "x_offset": 0,
@@ -182,8 +194,10 @@ You must generate a JSON prompt in this EXACT format:
       }},
       {{
         "type": "text",
-        "text": "[GENERATE CATCHY TAGLINE - MEMORABLE AND PERSUASIVE]",
+        "text": "[GENERATE CATCHY TAGLINE - MEMORABLE AND PERSUASIVE - MUST BE DIFFERENT FROM FONT NAME]",
         "font": "{secondary_font or primary_font or 'professional serif or sans-serif'}",
+        "font_instruction": "USE THIS FONT TO RENDER THE TEXT ABOVE - THE TEXT FIELD MUST CONTAIN PRODUCT COPY, NOT THE FONT NAME",
+        "warning": "DO NOT PUT THE FONT NAME IN THE TEXT FIELD - GENERATE ACTUAL PRODUCT TAGLINE TEXT",
         "placement": {{
           "position": "top-center",
           "x_offset": 0,
@@ -248,15 +262,16 @@ You must generate a JSON prompt in this EXACT format:
     }}
   }},
   "critical_mandates": [
+    "**MANDATORY ASPECT RATIO - FIRST PRIORITY:** Generate the image in EXACTLY 1:1 aspect ratio (SQUARE format). Output dimensions MUST be 1080x1080 pixels. Width MUST equal height. Do NOT generate landscape or portrait images. This is a Meta ad creative requirement.",
     "**Absolute Rule:** Never change, redraw, or redesign the product. Use its real colors, structure, and features only.",
     "**Background:** Create solid neutral background (light beige #F5F5DC, light brown #D2B48C, or off-white) OR blurred natural setting with 40-50% depth of field blur. No patterns, textures, or gradients in solid backgrounds.",
     "**Product Positioning:** Position product off-center (60% from left OR 40% from left), at 50% from top, occupying 65% of canvas height. Add subtle shadow: soft, diffused, 5-10px blur, 20% opacity, offset 3-5px downward.",
-    "**Typography:** Use EXACTLY the fonts specified. Do NOT substitute, modify, or use similar fonts. DO NOT print font names as text - use the fonts to display actual product text.",
+    "**Typography - CRITICAL FONT USAGE RULE:** The 'font' field in each text element is a TECHNICAL SPECIFICATION telling you which font to USE for rendering. It is NOT text to display. NEVER print font names like 'Tan Pearl', 'Calgary', or 'RoxboroughCF' as visible text in the image. Generate actual product headlines, taglines, and text content. Use the specified fonts to render that content, but never display the font names themselves. Example: If font field says 'Tan Pearl', use Tan Pearl font to render 'ELEGANCE UNVEILED' - do NOT display 'Tan Pearl' as text.",
     "**Text Placement:** Headline at top-center (80px from top), tagline below headline (140px from top), features at bottom (120px from bottom), CTA button at bottom-center (40px from bottom). Maintain 10% margin from edges.",
     "**Feature Icons:** Create 3-5 feature items with simple line-art icons and descriptive text. Arrange horizontally at bottom section. Icons: 40-50px, text: 16-20px font size. Even spacing across width.",
     "**CTA Button:** Rounded corners (8px), contrasting background color (#D2B48C or #2C2C2C), white or dark text, centered at bottom. Font size: 18-24px. Padding: 12px 32px.",
     "**Spelling:** CRITICAL - PERFECT spelling and grammar. AI image generation often has spelling errors - be extra careful. Review all text before including in JSON.",
-    "**Output Format:** Generate final image in 1:1 aspect ratio (1080x1080 pixels). Product must be perfectly composed within this square frame.",
+    "**Output Format - SQUARE IMAGE:** Generate final image in 1:1 aspect ratio (1080x1080 pixels). The image MUST be square. Product must be perfectly composed within this square frame.",
     "**Professional Quality:** The image should look like professional product photography, not AI-generated. Use realistic lighting, natural shadows, and authentic composition."
   ]
 }}
@@ -288,9 +303,20 @@ TEXT GENERATION REQUIREMENTS:
         - If text contains newlines, use \\n or keep on single line
         - Ensure all string values are properly quoted and escaped
         
-        **ABSOLUTELY CRITICAL: DO NOT PRINT FONT NAMES AS TEXT IN THE GENERATED IMAGE.**
-        **The font field specifies which font to USE, not what text to DISPLAY.**
-        **Generate actual product headlines, taglines, and text - NOT font names.**"""
+        **ABSOLUTELY CRITICAL - FONT NAME DISPLAY PROHIBITION:**
+        **NEVER PRINT FONT NAMES AS TEXT IN THE GENERATED IMAGE.**
+        **The "font" field in JSON is a TECHNICAL SPECIFICATION - it tells you which font to USE for rendering.**
+        **It is NOT text content to display.**
+        **Examples of WRONG behavior:**
+        **  - Displaying "Tan Pearl" as text in the image**
+        **  - Displaying "Calgary" as text in the image**
+        **  - Displaying "RoxboroughCF" as text in the image**
+        **Examples of CORRECT behavior:**
+        **  - Using Tan Pearl font to render "ELEGANCE UNVEILED"**
+        **  - Using Calgary font to render "CRAFTED PERFECTION"**
+        **  - Using RoxboroughCF font to render "Rs. 1899"**
+        **Generate actual product headlines, taglines, pricing, and feature text - NOT font names.**
+        **The font name should ONLY exist in the JSON "font" field as a specification, NEVER as displayed text.**"""
         
         return system_prompt
     
@@ -373,6 +399,25 @@ TEXT GENERATION REQUIREMENTS:
                         - Ensure ALL text has correct spelling and grammar - AI image generation often has spelling errors
                         - Make headlines and taglines catchy, memorable one-liners that stick in the mind
                         - Place text elements strategically based on product analysis and modern advertising principles
+                        
+                        **ABSOLUTELY CRITICAL - FONT NAME PROHIBITION (READ THIS CAREFULLY):**
+                        - NEVER use font names (like "Tan Pearl", "Calgary", "RoxboroughCF") as the actual text content
+                        - NEVER use font names as product names, collection names, or any displayed text
+                        - The "font" field is a specification - it tells which font to USE, not what to DISPLAY
+                        - Generate actual product-related text (e.g., "ELEGANCE UNVEILED", "Crafted Perfection", "Rs. 1899")
+                        - Use the specified fonts to render that text, but never display the font names themselves
+                        - Example: If font is "Tan Pearl", generate text like "ELEGANCE UNVEILED" and use Tan Pearl font to render it
+                        - WRONG: Putting "Tan Pearl" as the headline text, tagline, product name, or anywhere in the image
+                        - CORRECT: Using Tan Pearl font to render "ELEGANCE UNVEILED"
+                        - DO NOT create a product name or collection name that matches the font name
+                        - If you see a font name in the font field, use that font but generate DIFFERENT text content
+                        - The text in "text" fields should NEVER match or contain the font name from the "font" field
+                        
+                        CRITICAL JSON FORMATTING:
+                        - Escape all quotes in text values: use \" instead of "
+                        - Keep all text on single lines (no actual newlines in JSON strings)
+                        - Ensure all brackets and braces are properly closed
+                        - Return complete, valid JSON that can be parsed without errors
                         """
                     },
                     {
@@ -389,6 +434,9 @@ TEXT GENERATION REQUIREMENTS:
             
             # Parse and structure the response
             prompt_text = response.content
+            
+            # Post-process to remove font names from text fields
+            prompt_text = self._remove_font_names_from_text(prompt_text, primary_font, secondary_font, pricing_font)
             
             # Extract structured information
             structured_prompt = self._parse_prompt(prompt_text)
@@ -421,6 +469,110 @@ TEXT GENERATION REQUIREMENTS:
                     "user_inputs": user_inputs
                 }
             }
+    
+    def _remove_font_names_from_text(self, prompt_text: str, primary_font: Optional[str], 
+                                     secondary_font: Optional[str], 
+                                     pricing_font: Optional[str]) -> str:
+        """
+        Post-process the generated prompt to remove font names from text fields.
+        This prevents font names from appearing as displayed text in the final image.
+        """
+        # Collect all font names to check for
+        font_names = []
+        if primary_font:
+            font_names.append(primary_font)
+        if secondary_font:
+            font_names.append(secondary_font)
+        if pricing_font:
+            font_names.append(pricing_font)
+        
+        if not font_names:
+            return prompt_text
+        
+        # Try to parse JSON and clean it
+        try:
+            # Clean markdown code blocks
+            clean_prompt = prompt_text
+            if clean_prompt.startswith('```json'):
+                clean_prompt = clean_prompt[7:]
+            elif clean_prompt.startswith('```'):
+                clean_prompt = clean_prompt[3:]
+            if clean_prompt.endswith('```'):
+                clean_prompt = clean_prompt[:-3]
+            clean_prompt = clean_prompt.strip()
+            
+            # Find JSON object
+            json_start = clean_prompt.find('{')
+            json_end = clean_prompt.rfind('}')
+            
+            if json_start != -1 and json_end != -1:
+                json_str = clean_prompt[json_start:json_end+1]
+                prefix = clean_prompt[:json_start]
+                suffix = clean_prompt[json_end+1:]
+                
+                # Parse JSON
+                prompt_json = json.loads(json_str)
+                
+                # Function to recursively clean text fields
+                def clean_text_fields(obj, font_names_list):
+                    if isinstance(obj, dict):
+                        for key, value in obj.items():
+                            if key == "text" and isinstance(value, str):
+                                # Check if text contains any font name
+                                for font_name in font_names_list:
+                                    # Case-insensitive check
+                                    if font_name.lower() in value.lower():
+                                        # Replace font name with generic product text
+                                        if key == "text" and "hierarchy" in obj and obj.get("hierarchy") == "primary":
+                                            # For headlines, use a generic elegant phrase
+                                            value = re.sub(re.escape(font_name), "ELEGANCE UNVEILED", value, flags=re.IGNORECASE)
+                                        elif key == "text" and "hierarchy" in obj and obj.get("hierarchy") == "secondary":
+                                            # For taglines, use a generic phrase
+                                            value = re.sub(re.escape(font_name), "Crafted Perfection", value, flags=re.IGNORECASE)
+                                        else:
+                                            # For other text, remove the font name
+                                            value = re.sub(re.escape(font_name), "", value, flags=re.IGNORECASE).strip()
+                                        obj[key] = value
+                            elif key == "items" and isinstance(value, list):
+                                # Handle feature items
+                                for item in value:
+                                    if isinstance(item, dict) and "text" in item:
+                                        for font_name in font_names_list:
+                                            if font_name.lower() in item["text"].lower():
+                                                # Remove font name from feature text
+                                                item["text"] = re.sub(re.escape(font_name), "", item["text"], flags=re.IGNORECASE).strip()
+                            else:
+                                clean_text_fields(value, font_names_list)
+                    elif isinstance(obj, list):
+                        for item in obj:
+                            clean_text_fields(item, font_names_list)
+                
+                # Clean the JSON
+                clean_text_fields(prompt_json, font_names)
+                
+                # Reconstruct the prompt
+                cleaned_json_str = json.dumps(prompt_json, indent=2)
+                return prefix + cleaned_json_str + suffix
+            else:
+                # If JSON parsing fails, do simple string replacement as fallback
+                cleaned = prompt_text
+                for font_name in font_names:
+                    # Only replace if it's clearly being used as text (not in font field)
+                    # This is a heuristic - look for font name in quotes or as standalone text
+                    pattern = rf'["\']\s*{re.escape(font_name)}\s*["\']'
+                    cleaned = re.sub(pattern, '"PRODUCT TEXT"', cleaned, flags=re.IGNORECASE)
+                return cleaned
+                
+        except (json.JSONDecodeError, Exception) as e:
+            # If JSON parsing fails, do simple string replacement as fallback
+            cleaned = prompt_text
+            for font_name in font_names:
+                # Try to replace font names that appear in text fields (heuristic)
+                # Look for patterns like "text": "Tan Pearl" or similar
+                pattern = rf'"text"\s*:\s*["\']\s*{re.escape(font_name)}\s*["\']'
+                replacement = '"text": "PRODUCT HEADLINE"'
+                cleaned = re.sub(pattern, replacement, cleaned, flags=re.IGNORECASE)
+            return cleaned
     
     def _parse_prompt(self, prompt_text: str) -> Dict[str, str]:
         """Parse the generated prompt into structured components"""
