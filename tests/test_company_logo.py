@@ -30,8 +30,8 @@ def test_company_logo_integration():
     test_image = "data/input/cuttlery_holder_nobackground.png"
     
     # Company logo path
-    company_logo = "logo/logo.jpg"
-    
+    company_logo = "logo/logo.png"
+
     if not os.path.exists(test_image):
         print(f"❌ Test image not found: {test_image}")
         print("Please ensure test image exists in data/input/")
