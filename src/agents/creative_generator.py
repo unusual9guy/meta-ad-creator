@@ -148,21 +148,83 @@ class CreativeGeneratorAgent:
         cleaned_prompt = re.sub(r',\s*([}\]])', r'\1', cleaned_prompt)
         cleaned_prompt = re.sub(r'([{[,])\s*,', r'\1', cleaned_prompt)
         
-        # Add explicit instructions for image generation
-        critical_instructions = """
+        # Add explicit instructions for image generation with variety
+        import random
+        
+        # Randomize design elements for variety
+        background_styles = [
+            "warm beige gradient with soft shadows",
+            "cool gray minimalist with subtle texture",
+            "natural wooden surface with soft lighting",
+            "marble texture with elegant shadows",
+            "soft fabric texture with depth",
+            "muted earth tones with natural feel",
+            "clean white with dramatic product shadows",
+            "soft pastel gradient (peach to cream)",
+            "dark moody background with spotlight on product",
+            "rustic textured background with warm lighting"
+        ]
+        
+        layout_styles = [
+            "product on left, text on right",
+            "product centered, text above and below",
+            "product on right, text on left", 
+            "product bottom-center, text at top",
+            "product slightly off-center with asymmetric text layout",
+            "diagonal composition with dynamic text placement"
+        ]
+        
+        typography_styles = [
+            "bold modern sans-serif headlines with thin body text",
+            "elegant serif headlines with clean sans-serif details",
+            "minimalist typography with lots of white space",
+            "bold statement typography with high contrast",
+            "refined luxury typography with subtle letter-spacing"
+        ]
+        
+        color_schemes = [
+            "warm neutrals (beige, cream, tan, brown)",
+            "cool elegance (gray, silver, white, charcoal)",
+            "earthy luxe (olive, terracotta, gold, cream)",
+            "modern minimal (black, white, single accent color)",
+            "soft pastels (blush, sage, lavender, cream)"
+        ]
+        
+        selected_bg = random.choice(background_styles)
+        selected_layout = random.choice(layout_styles)
+        selected_typo = random.choice(typography_styles)
+        selected_colors = random.choice(color_schemes)
+        
+        critical_instructions = f"""
 
 CRITICAL INSTRUCTIONS FOR IMAGE GENERATION:
 
 1. ASPECT RATIO: Generate the image in EXACTLY 1:1 aspect ratio (square format, 1080x1080 pixels).
    - The output MUST be a perfect square
-   - Do NOT generate landscape or portrait images
    - Width and height MUST be equal
 
-2. FONT NAMES: DO NOT display any font names as text in the generated image.
-   - All text should be actual product copy (headlines, taglines, prices, features)
-   - Never render font names like "Calgary", "Tan Pearl", "Playfair", etc. as visible text
+2. UNIQUE CREATIVE DIRECTION FOR THIS AD:
+   - BACKGROUND STYLE: {selected_bg}
+   - LAYOUT: {selected_layout}
+   - TYPOGRAPHY APPROACH: {selected_typo}
+   - COLOR SCHEME: {selected_colors}
+   
+3. PROFESSIONAL QUALITY REQUIREMENTS:
+   - This must look like it was created by a professional graphic designer at a top agency
+   - Study high-end brand ads from Apple, Nike, Dyson, Bang & Olufsen for inspiration
+   - Use sophisticated color grading and subtle shadows
+   - Typography should be perfectly kerned and balanced
+   - Negative space is your friend - don't overcrowd
+   - The overall feel should be premium, polished, and aspirational
+   - Avoid generic "template" looks - make it feel custom and crafted
+   - Lighting should be soft, directional, and create depth
+   - Shadows should be realistic and grounded
 
-3. PRODUCT: Keep the product as the central hero element, perfectly composed within the square frame.
+4. FONT NAMES: DO NOT display any font names as text in the generated image.
+   - All text should be actual product copy (headlines, taglines, prices, features)
+   - Never render font names as visible text
+
+5. PRODUCT: Keep the product as the hero element, styled according to the layout direction above.
 
 """
         cleaned_prompt = critical_instructions + cleaned_prompt
