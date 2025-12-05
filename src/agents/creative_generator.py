@@ -40,9 +40,10 @@ class CreativeGeneratorAgent:
     
     def __init__(self, api_key: Optional[str] = None, custom_font_names: Optional[List[str]] = None):
         """Initialize the creative generator agent"""
-        self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
+        # Use specific key for creative generation, fall back to general key
+        self.api_key = api_key or os.getenv("GOOGLE_API_KEY_CREATIVE") or os.getenv("GOOGLE_API_KEY")
         if not self.api_key:
-            raise ValueError("Google API key is required. Set GOOGLE_API_KEY environment variable.")
+            raise ValueError("Google API key is required. Set GOOGLE_API_KEY_CREATIVE or GOOGLE_API_KEY environment variable.")
         
         self.client = genai.Client(api_key=self.api_key)
         

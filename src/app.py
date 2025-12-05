@@ -430,12 +430,14 @@ elif st.session_state.workflow_step == 'processing':
     status_text = st.empty()
     
     try:
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            st.error("❌ Google API key not found. Please set GOOGLE_API_KEY in your .env file.")
+        # Check if at least one API key is available
+        bg_key = os.getenv("GOOGLE_API_KEY_BACKGROUND") or os.getenv("GOOGLE_API_KEY")
+        if not bg_key:
+            st.error("❌ Google API key not found. Please set GOOGLE_API_KEY_BACKGROUND or GOOGLE_API_KEY in your .env file.")
             st.stop()
         
-        background_remover = BackgroundRemoverAgent(api_key)
+        # Agent will automatically use GOOGLE_API_KEY_BACKGROUND or fall back to GOOGLE_API_KEY
+        background_remover = BackgroundRemoverAgent()
         image_cropper = ImageCropperAgent()
         
         status_text.markdown("**🧹 Step 1/2:** Removing background...")
@@ -519,6 +521,58 @@ elif st.session_state.workflow_step == 'prompt_input':
     
     st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
     
+    # Logo upload section - OUTSIDE the form (file uploaders don't work inside forms)
+    st.markdown("**🏢 Company Logo (Optional)**")
+    st.markdown("<div style='height: 0.5rem;'></div>", unsafe_allow_html=True)
+    
+    include_logo = st.checkbox(
+        "📎 Include Company Logo",
+        value=st.session_state.logo_path is not None,
+        help="Check to include your company logo at the top of the ad",
+        key="include_logo_checkbox"
+    )
+    
+    if include_logo:
+        logo_file = st.file_uploader(
+            "📎 Upload Company Logo",
+            type=['png', 'jpg', 'jpeg'],
+            help="Upload your company logo (PNG with transparency preferred)",
+            key="logo_uploader"
+        )
+        
+        if logo_file is not None:
+            # Save logo to temp directory
+            logo_dir = "data/output/temp"
+            os.makedirs(logo_dir, exist_ok=True)
+            
+            # Use a consistent filename based on the uploaded file name
+            logo_extension = os.path.splitext(logo_file.name)[1]
+            logo_filename = f"company_logo{logo_extension}"
+            logo_path = os.path.join(logo_dir, logo_filename)
+            
+            with open(logo_path, "wb") as f:
+                f.write(logo_file.getbuffer())
+            
+            st.session_state.logo_path = logo_path
+            
+            # Show logo preview
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col1:
+                logo_image = Image.open(logo_file)
+                st.image(logo_image, caption="Logo Preview", width=150)
+            
+            st.success(f"✅ Logo uploaded successfully!")
+        elif st.session_state.logo_path and os.path.exists(st.session_state.logo_path):
+            # Show existing logo if already uploaded
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col1:
+                st.image(st.session_state.logo_path, caption="Current Logo", width=150)
+            st.info("ℹ️ Logo already uploaded. Upload a new one to replace it.")
+    else:
+        st.session_state.logo_path = None
+    
+    st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
+    
     with st.form("product_details_form"):
         st.markdown("**Fill in the product information:**")
         st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
@@ -571,43 +625,11 @@ elif st.session_state.workflow_step == 'prompt_input':
             price = ""
             pricing_font = ""
         
-        st.markdown("---")
-        st.markdown("**🏢 Branding (Optional)**")
-        
-        include_logo = st.checkbox(
-            "📎 Include Company Logo",
-            value=False,
-            help="Check to include your company logo at the top of the ad"
-        )
-        
-        if include_logo:
-            logo_file = st.file_uploader(
-                "📎 Upload Company Logo",
-                type=['png', 'jpg', 'jpeg', 'svg'],
-                help="Upload your company logo (PNG with transparency preferred)"
-            )
-            
-            if logo_file is not None:
-                # Save logo to temp directory
-                logo_dir = "data/output/temp"
-                os.makedirs(logo_dir, exist_ok=True)
-                timestamp = int(time.time())
-                logo_extension = os.path.splitext(logo_file.name)[1]
-                logo_filename = f"logo_{timestamp}{logo_extension}"
-                logo_path = os.path.join(logo_dir, logo_filename)
-                
-                with open(logo_path, "wb") as f:
-                    f.write(logo_file.getbuffer())
-                
-                st.session_state.logo_path = logo_path
-                
-                # Show logo preview
-                logo_image = Image.open(logo_file)
-                st.image(logo_image, caption="Logo Preview", width=200)
-        else:
-            st.session_state.logo_path = None
-        
         st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
+        
+        # Show logo status in form
+        if st.session_state.logo_path:
+            st.info(f"🏢 Company logo will be included in the creative")
         
         submitted = st.form_submit_button("🚀 Generate Prompt", width='stretch', type="primary")
         
@@ -649,8 +671,8 @@ elif st.session_state.workflow_step == 'generating_prompt':
     progress_bar.progress(50)
     
     try:
-        api_key = os.getenv("GOOGLE_API_KEY")
-        prompt_generator = PromptGeneratorAgent(api_key)
+        # Agent will automatically use GOOGLE_API_KEY_PROMPT or fall back to GOOGLE_API_KEY
+        prompt_generator = PromptGeneratorAgent()
         
         user_inputs = {
             "target_audience": st.session_state.target_audience,
@@ -813,8 +835,8 @@ elif st.session_state.workflow_step == 'generating_creative':
     progress_bar.progress(50)
     
     try:
-        api_key = os.getenv("GOOGLE_API_KEY")
-        creative_generator = CreativeGeneratorAgent(api_key)
+        # Agent will automatically use GOOGLE_API_KEY_CREATIVE or fall back to GOOGLE_API_KEY
+        creative_generator = CreativeGeneratorAgent()
         
         # Collect font names to strip from prompt
         font_names_to_strip = []

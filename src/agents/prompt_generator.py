@@ -28,9 +28,10 @@ class PromptGeneratorAgent:
     
     def __init__(self, api_key: Optional[str] = None):
         """Initialize the prompt generator agent"""
-        self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
+        # Use specific key for prompt generation, fall back to general key
+        self.api_key = api_key or os.getenv("GOOGLE_API_KEY_PROMPT") or os.getenv("GOOGLE_API_KEY")
         if not self.api_key:
-            raise ValueError("Google API key is required. Set GOOGLE_API_KEY environment variable.")
+            raise ValueError("Google API key is required. Set GOOGLE_API_KEY_PROMPT or GOOGLE_API_KEY environment variable.")
         
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash-image-preview",
