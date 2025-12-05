@@ -7,6 +7,7 @@ Enhanced with user-provided fonts, logo support, and flexible text placement
 import base64
 import json
 import re
+import random
 from typing import Dict, Any, Optional
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.schema import HumanMessage, SystemMessage
@@ -36,7 +37,7 @@ class PromptGeneratorAgent:
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash-image-preview",
             google_api_key=self.api_key,
-            temperature=0.7,
+            temperature=0.9,  # Higher temperature for more creative variety
             max_tokens=3000  # Increased to prevent JSON truncation
         )
     
@@ -121,25 +122,68 @@ class PromptGeneratorAgent:
         font_instructions_processed = font_instructions_processed.replace("[SECONDARY_FONT]", secondary_font or (primary_font or "same as primary"))
         font_instructions_processed = font_instructions_processed.replace("[PRICING_FONT]", pricing_font or (primary_font or "professional bold font"))
         
-        system_prompt = f"""You are an expert marketing prompt generator for Google's Nano Banana model.
-Your task is to analyze a product image and description to create a structured JSON prompt
-that will be used to generate PREMIUM Meta ad creatives that look like professional product photography.
+        # Add randomization for variety in each generation
+        background_options = [
+            "warm beige gradient transitioning to soft cream, reminiscent of high-end furniture catalogs",
+            "cool gray concrete texture with subtle imperfections for industrial-chic aesthetic",
+            "natural oak wood grain surface with soft golden hour lighting",
+            "luxurious marble surface with delicate veining in cream and gray tones",
+            "soft linen fabric texture in muted earth tones with gentle folds",
+            "minimalist pure white with dramatic directional shadows",
+            "dark charcoal moody background with single spotlight creating drama",
+            "soft terracotta clay surface with Mediterranean warmth",
+            "brushed metal surface with subtle reflections for modern tech aesthetic",
+            "natural stone texture in warm sandstone tones"
+        ]
+        
+        layout_options = [
+            "asymmetric with product positioned at golden ratio (61.8% from left), text balancing the composition",
+            "centered product with elegant text framing above and below in classic luxury style",
+            "dynamic diagonal composition with product on lower-right, text flowing from upper-left",
+            "minimalist with product dominating 70% of frame, subtle text elements",
+            "editorial style with product on left third, generous text space on right",
+            "modern split-screen feel with clear zones for product and messaging"
+        ]
+        
+        mood_options = [
+            "warm and inviting, like a cozy home lifestyle brand",
+            "cool and sophisticated, like a premium tech company",
+            "earthy and organic, like an artisan craft brand",
+            "bold and confident, like a luxury fashion house",
+            "serene and minimal, like a Scandinavian design brand",
+            "rich and opulent, like a heritage luxury brand"
+        ]
+        
+        selected_background = random.choice(background_options)
+        selected_layout = random.choice(layout_options)
+        selected_mood = random.choice(mood_options)
+        
+        system_prompt = f"""You are an expert creative director at a top advertising agency.
+Your task is to create a structured JSON prompt for generating PREMIUM Meta ad creatives.
+The output should look like it was designed by a professional team at agencies like Ogilvy, Wieden+Kennedy, or Droga5.
 
-CRITICAL QUALITY REQUIREMENTS:
-- The final ad must look like professional product photography with soft natural lighting, subtle shadows, and realistic depth of field
-- Do NOT use: flat backgrounds, bright saturated colors, heavy drop shadows, decorative borders, or template-style layouts
-- Apply subtle color grading, soft shadows, natural highlights, and realistic depth of field blur
+CREATIVE DIRECTION FOR THIS AD:
+- BACKGROUND STYLE: {selected_background}
+- LAYOUT APPROACH: {selected_layout}  
+- OVERALL MOOD: {selected_mood}
+
+PROFESSIONAL QUALITY STANDARDS:
+- Study reference: Apple product ads, Dyson campaigns, Bang & Olufsen visuals, Aesop packaging
+- The ad must look like it cost $10,000+ to produce - premium, polished, intentional
+- Every element should feel deliberately placed by a skilled designer
+- Use sophisticated color grading - not flat or oversaturated
+- Typography should be perfectly balanced with proper kerning and hierarchy
+- Negative space is crucial - let the design breathe
+- Shadows should be soft, realistic, and grounded (not floating)
+- Lighting should feel natural yet cinematic
+- AVOID: Template looks, clipart feel, generic stock photo aesthetic, busy designs
 - PERFECT spelling and grammar - NO spelling mistakes allowed
-- Use EXACTLY the fonts specified by the user - DO NOT substitute or modify font names
 
 **ABSOLUTELY CRITICAL - FONT USAGE:**
 - The "font" field in JSON is a TECHNICAL SPECIFICATION for which font to USE, NOT text to DISPLAY
-- NEVER print the font name (e.g., "Tan Pearl", "Calgary", "RoxboroughCF") as visible text in the image
-- The font name should ONLY appear in the JSON "font" field as a specification
+- NEVER print the font name as visible text in the image
 - Generate actual product text (headlines, taglines, etc.) - NOT font names
-- Example: If font is "Tan Pearl", use that font to render "ELEGANCE UNVEILED" - DO NOT display "Tan Pearl" as text
-- WRONG: Displaying "Tan Pearl" or "Calgary" as text in the image
-- CORRECT: Using Tan Pearl font to display "ELEGANCE UNVEILED" or "Crafted Perfection"
+- Example: If font is "Tan Pearl" and product is a wooden organizer, use Tan Pearl font to render "ORGANIZE ARTFULLY" - DO NOT display "Tan Pearl" as text
 
 {font_instructions_processed}
 
@@ -149,36 +193,46 @@ You must generate a JSON prompt in this EXACT format:
 {{
   "ad_type": "Meta ad Creative for the uploaded product",
   "model_name": "nano banana",
-  "product_usage": "The provided product image has no background (transparent/white background). Create a realistic, natural background that complements the product. Option 1: Solid neutral background in light beige (#F5F5DC), light brown (#D2B48C), or off-white. No patterns, textures, or gradients. Option 2: Blurred natural setting (dining table, vanity, lifestyle context) with soft depth of field (40-50% blurred). Background should complement product colors. Do NOT modify, redesign, or alter the product itself - only add appropriate background and lighting.",
+  "creative_direction": {{
+    "background_style": "{selected_background}",
+    "layout_approach": "{selected_layout}",
+    "mood": "{selected_mood}"
+  }},
+  "product_usage": "The provided product image has no background. Create the background following this direction: {selected_background}. Do NOT modify, redesign, or alter the product itself - only add appropriate background and lighting that matches the creative direction.",
   "visual": {{
-    "shot_type": "close-up",
-    "highlight": "Showcase the product's unique texture, material, and key design features with sharp, clear visual focus.",
+    "shot_type": "hero product shot with cinematic quality",
+    "highlight": "Showcase the product's unique texture, material, and key design features. Make it look desirable and premium.",
     "background": {{
-      "style": "Create a solid neutral background (light beige #F5F5DC, light brown #D2B48C, or off-white) OR a blurred natural setting with soft depth of field. Background should be 40-50% blurred if using natural setting, maintaining context but keeping focus on product. Use warm, soft lighting. No patterns, textures, or gradients in solid backgrounds.",
-      "props": "If using natural setting, include realistic, lifestyle-appropriate props (dining table, plates, fabric textures) that enhance the scene naturally. All props should look naturally placed and photographed, not artificially generated.",
-      "contrast": "Create realistic depth with natural lighting, soft shadows, and subtle background blur. Lighting should be soft directional light from upper-left, creating gentle shadows on the right side. Avoid harsh, artificial lighting or overly perfect shadows."
+      "style": "{selected_background}",
+      "execution": "Create depth and atmosphere. The background should support the product, not compete with it. Use subtle gradients, texture, or environmental context as specified in the creative direction.",
+      "props": "Only include props if they enhance the lifestyle context. Each prop should feel intentional and premium. Less is more."
     }},
-    "appearance": "The final image must look like professional product photography with sophisticated editing, soft shadows, and realistic aesthetics. Apply subtle color grading, soft shadows (5-10px blur, 20% opacity), natural highlights, and realistic depth of field blur. The image should have the quality of a professional product photoshoot, not an AI illustration or template.",
-    "lighting": "Use soft, even lighting with subtle shadows beneath product. Shadow: soft, diffused, 5-10px blur, 20% opacity, offset 3-5px downward. Product should appear slightly elevated, not flat on background. Lighting should look like it was captured with professional photography equipment."
+    "appearance": "The final image must look like it was shot by a professional photographer and art-directed by a creative director. Think Apple product shots, Dyson campaigns, luxury brand catalogs. No template feel, no stock photo aesthetic.",
+    "lighting": "Cinematic, intentional lighting that creates mood and dimension. Soft key light with subtle fill. Shadows should be realistic and grounded. The lighting should match the mood: {selected_mood}"
   }},
   "product_placement": {{
-    "position": "off-center",
-    "horizontal": "60% from left OR 40% from left (not centered)",
-    "vertical": "50% from top",
-    "size": "65% of canvas height (700px for 1080px canvas)",
-    "shadow": "soft, diffused, 5-10px blur, 20% opacity, offset 3-5px downward"
+    "layout_direction": "{selected_layout}",
+    "positioning": "Follow the layout direction above. Product should be the hero but placement should feel dynamic and intentional, not centered and static.",
+    "size": "Product should dominate visually but leave room for typography. Scale appropriately based on layout.",
+    "shadow": "Realistic, grounded shadow that matches the lighting direction. Not floating, not too harsh, not too soft."
   }},
   "typography_and_layout": {{
-    "style": "Clean, minimal design with strategic text placement. Text elements can be placed anywhere for optimal visual balance. All text must be artistically integrated into the composition as part of a professional graphic design layout, not as simple text overlays.",
-    "visual_hierarchy": "Follow top-to-bottom hierarchy: Logo (if present) → Headline → Tagline → Body Text → Product → Features → CTA Button. Maintain 10% margin from all edges for text elements. Ensure text doesn't overlap with product unless intentional design choice.",
+    "style": "Premium typography that matches the mood: {selected_mood}. Every text element should feel deliberately designed. Use proper typographic hierarchy.",
+    "visual_hierarchy": "Clear hierarchy: Headline (largest, boldest) → Tagline (supporting) → Features (if included) → Price/CTA (action-driving). Balance with product placement.",
     "ratio": "MANDATORY 1:1 SQUARE (1080 x 1080 px) - Width MUST equal Height",
     "text_elements": [
       {{
         "type": "text",
-        "text": "[GENERATE CATCHY HEADLINE - 2-6 WORDS, MEMORABLE AND IMPACTFUL - MUST BE DIFFERENT FROM FONT NAME]",
+        "text": "[GENERATE A UNIQUE HEADLINE SPECIFIC TO THIS PRODUCT - Based on the product description, create a 2-6 word headline that: 1) Highlights what makes THIS specific product special, 2) Speaks directly to the target audience's desires, 3) Is NOT generic like 'Elegance Unveiled' or 'Timeless Beauty' - make it SPECIFIC to this product category and features, 4) Could only work for THIS type of product]",
         "font": "{primary_font or 'professional serif or sans-serif'}",
-        "font_instruction": "USE THIS FONT TO RENDER THE TEXT ABOVE - THE TEXT FIELD MUST CONTAIN PRODUCT COPY, NOT THE FONT NAME",
-        "warning": "DO NOT PUT THE FONT NAME IN THE TEXT FIELD - GENERATE ACTUAL PRODUCT HEADLINE TEXT",
+        "headline_examples_by_category": {{
+          "home_decor": ["ARTISAN CRAFTED", "HOME REIMAGINED", "CURATED LIVING", "HANDMADE HERITAGE"],
+          "kitchenware": ["KITCHEN ELEVATED", "CULINARY CRAFT", "COOK WITH SOUL", "TASTE PERFECTED"],
+          "photo_frames": ["MEMORIES FRAMED", "MOMENTS PRESERVED", "CAPTURE FOREVER", "STORIES DISPLAYED"],
+          "organizers": ["DECLUTTER BEAUTIFULLY", "ORDER MEETS ART", "ORGANIZED ELEGANCE", "TIDY IN STYLE"],
+          "luxury_gifts": ["GIFT EXTRAORDINARY", "UNWRAP LUXURY", "PRESENT PERFECTION", "TREASURED GIVING"]
+        }},
+        "instruction": "Generate a headline that is SPECIFIC to this product type. Do NOT use generic phrases. Think about what problem this product solves or what emotion it evokes for the target audience.",
         "placement": {{
           "position": "top-center",
           "x_offset": 0,
@@ -195,10 +249,15 @@ You must generate a JSON prompt in this EXACT format:
       }},
       {{
         "type": "text",
-        "text": "[GENERATE CATCHY TAGLINE - MEMORABLE AND PERSUASIVE - MUST BE DIFFERENT FROM FONT NAME]",
+        "text": "[GENERATE A UNIQUE TAGLINE SPECIFIC TO THIS PRODUCT AND TARGET AUDIENCE - Create a tagline that: 1) Directly addresses the target audience's pain point or aspiration, 2) Mentions or implies the product's key benefit, 3) Feels personal and specific, NOT generic marketing speak, 4) Would make the target audience think 'this is for me']",
         "font": "{secondary_font or primary_font or 'professional serif or sans-serif'}",
-        "font_instruction": "USE THIS FONT TO RENDER THE TEXT ABOVE - THE TEXT FIELD MUST CONTAIN PRODUCT COPY, NOT THE FONT NAME",
-        "warning": "DO NOT PUT THE FONT NAME IN THE TEXT FIELD - GENERATE ACTUAL PRODUCT TAGLINE TEXT",
+        "tagline_examples_by_audience": {{
+          "home_decor_enthusiasts": ["Transform your space, express your soul", "Where design meets your story", "Your home, your masterpiece"],
+          "luxury_buyers": ["For those who appreciate the finer things", "Crafted for the discerning eye", "Excellence you can see and feel"],
+          "gift_givers": ["Give something they'll treasure forever", "The gift that speaks volumes", "Make moments unforgettable"],
+          "busy_professionals": ["Simplify beautifully", "Order without compromise", "Efficiency meets elegance"]
+        }},
+        "instruction": "Generate a tagline that speaks DIRECTLY to the target audience. What do they want? What problem does this solve? Make them feel understood.",
         "placement": {{
           "position": "top-center",
           "x_offset": 0,
@@ -267,7 +326,7 @@ You must generate a JSON prompt in this EXACT format:
     "**Absolute Rule:** Never change, redraw, or redesign the product. Use its real colors, structure, and features only.",
     "**Background:** Create solid neutral background (light beige #F5F5DC, light brown #D2B48C, or off-white) OR blurred natural setting with 40-50% depth of field blur. No patterns, textures, or gradients in solid backgrounds.",
     "**Product Positioning:** Position product off-center (60% from left OR 40% from left), at 50% from top, occupying 65% of canvas height. Add subtle shadow: soft, diffused, 5-10px blur, 20% opacity, offset 3-5px downward.",
-    "**Typography - CRITICAL FONT USAGE RULE:** The 'font' field in each text element is a TECHNICAL SPECIFICATION telling you which font to USE for rendering. It is NOT text to display. NEVER print font names like 'Tan Pearl', 'Calgary', or 'RoxboroughCF' as visible text in the image. Generate actual product headlines, taglines, and text content. Use the specified fonts to render that content, but never display the font names themselves. Example: If font field says 'Tan Pearl', use Tan Pearl font to render 'ELEGANCE UNVEILED' - do NOT display 'Tan Pearl' as text.",
+    "**Typography - CRITICAL FONT USAGE RULE:** The 'font' field in each text element is a TECHNICAL SPECIFICATION telling you which font to USE for rendering. It is NOT text to display. NEVER print font names like 'Tan Pearl', 'Calgary', or 'RoxboroughCF' as visible text in the image. Generate UNIQUE product headlines based on what the product actually is. Example: For a photo frame, use the font to render 'FRAME YOUR STORY' - do NOT display the font name as text.",
     "**Text Placement:** Headline at top-center (80px from top), tagline below headline (140px from top), features at bottom (120px from bottom), CTA button at bottom-center (40px from bottom). Maintain 10% margin from edges.",
     "**Feature Icons:** Create 3-5 feature items with simple line-art icons and descriptive text. Arrange horizontally at bottom section. Icons: 40-50px, text: 16-20px font size. Even spacing across width.",
     "**CTA Button:** Rounded corners (8px), contrasting background color (#D2B48C or #2C2C2C), white or dark text, centered at bottom. Font size: 18-24px. Padding: 12px 32px.",
@@ -312,10 +371,11 @@ TEXT GENERATION REQUIREMENTS:
         **  - Displaying "Tan Pearl" as text in the image**
         **  - Displaying "Calgary" as text in the image**
         **  - Displaying "RoxboroughCF" as text in the image**
-        **Examples of CORRECT behavior:**
-        **  - Using Tan Pearl font to render "ELEGANCE UNVEILED"**
-        **  - Using Calgary font to render "CRAFTED PERFECTION"**
-        **  - Using RoxboroughCF font to render "Rs. 1899"**
+        **Examples of CORRECT behavior (product-specific headlines):**
+        **  - Wooden organizer: Using font to render "DECLUTTER IN STYLE" or "ORGANIZE ARTFULLY"**
+        **  - Photo frame: Using font to render "FRAME YOUR STORY" or "MEMORIES DISPLAYED"**
+        **  - Kitchen item: Using font to render "COOK WITH SOUL" or "KITCHEN ELEVATED"**
+        **  - Pricing: Using font to render "Rs. 1899"**
         **Generate actual product headlines, taglines, pricing, and feature text - NOT font names.**
         **The font name should ONLY exist in the JSON "font" field as a specification, NEVER as displayed text.**"""
         
@@ -390,26 +450,43 @@ TEXT GENERATION REQUIREMENTS:
                         Please analyze this product image and generate a structured prompt for Google's Nano Banana model.
                         The product image has no background, so you must instruct the AI to CREATE a realistic, natural background that complements the product.
                         
-                        CRITICAL REQUIREMENTS:
-                        - Use EXACTLY the fonts specified above. Do NOT substitute or modify font names.
-                        - Generate complete, compelling text for ALL text elements
-                        - Headline: Create a catchy, one-liner headline (2-6 words) that is memorable and impactful
-                        - Tagline: Create a catchy, one-liner tagline that is persuasive and memorable
-                        - Features: Generate 3-5 product features with simple, clear descriptions and appropriate icon suggestions
+                        CRITICAL REQUIREMENTS FOR UNIQUE TEXT GENERATION:
+                        
+                        **HEADLINE MUST BE UNIQUE TO THIS PRODUCT:**
+                        - Analyze the product description: "{description}"
+                        - Analyze the target audience: "{user_inputs.get('target_audience', 'general') if user_inputs else 'general'}"
+                        - Create a headline that could ONLY work for this specific product
+                        - DO NOT use generic phrases like "Elegance Unveiled", "Timeless Beauty", "Premium Quality"
+                        - Instead, reference: the product material, its function, the lifestyle it enables, or the problem it solves
+                        - Examples: For a wooden organizer → "DECLUTTER IN STYLE" or "ORGANIZE ARTFULLY"
+                        - Examples: For a photo frame → "FRAME YOUR STORY" or "MEMORIES DISPLAYED"
+                        - The headline should make someone instantly understand what the product is about
+                        
+                        **TAGLINE MUST SPEAK TO THE TARGET AUDIENCE:**
+                        - Who is the target audience? Think about their desires, pain points, aspirations
+                        - Create a tagline that makes them think "this is exactly what I need"
+                        - Reference their lifestyle, values, or the transformation the product offers
+                        - DO NOT use vague phrases like "Crafted Perfection" or "Quality You Deserve"
+                        - Be SPECIFIC about the benefit or emotion
+                        
+                        **OTHER REQUIREMENTS:**
+                        - Use EXACTLY the fonts specified above
+                        - Features: Generate 3-5 product-specific features based on the actual product
                         - CTA: Create compelling call-to-action text
-                        - Ensure ALL text has correct spelling and grammar - AI image generation often has spelling errors
-                        - Make headlines and taglines catchy, memorable one-liners that stick in the mind
-                        - Place text elements strategically based on product analysis and modern advertising principles
+                        - Ensure ALL text has correct spelling and grammar
+                        - Place text elements strategically based on the layout direction
                         
                         **ABSOLUTELY CRITICAL - FONT NAME PROHIBITION (READ THIS CAREFULLY):**
                         - NEVER use font names (like "Tan Pearl", "Calgary", "RoxboroughCF") as the actual text content
                         - NEVER use font names as product names, collection names, or any displayed text
                         - The "font" field is a specification - it tells which font to USE, not what to DISPLAY
-                        - Generate actual product-related text (e.g., "ELEGANCE UNVEILED", "Crafted Perfection", "Rs. 1899")
+                        - Generate UNIQUE product-related text based on what the product actually is
                         - Use the specified fonts to render that text, but never display the font names themselves
-                        - Example: If font is "Tan Pearl", generate text like "ELEGANCE UNVEILED" and use Tan Pearl font to render it
-                        - WRONG: Putting "Tan Pearl" as the headline text, tagline, product name, or anywhere in the image
-                        - CORRECT: Using Tan Pearl font to render "ELEGANCE UNVEILED"
+                        - Example: For an organizer product with font "Tan Pearl", generate "ORGANIZE ARTFULLY" and use Tan Pearl font to render it
+                        - Example: For a photo frame product, generate "FRAME YOUR STORY" or "MEMORIES DISPLAYED"
+                        - WRONG: Putting "Tan Pearl" or any font name as text in the image
+                        - WRONG: Using generic phrases like "Elegance Unveiled" for every product
+                        - CORRECT: Creating a headline specific to THIS product type and the target audience
                         - DO NOT create a product name or collection name that matches the font name
                         - If you see a font name in the font field, use that font but generate DIFFERENT text content
                         - The text in "text" fields should NEVER match or contain the font name from the "font" field
@@ -524,15 +601,11 @@ TEXT GENERATION REQUIREMENTS:
                                     # Case-insensitive check
                                     if font_name.lower() in value.lower():
                                         # Replace font name with generic product text
-                                        if key == "text" and "hierarchy" in obj and obj.get("hierarchy") == "primary":
-                                            # For headlines, use a generic elegant phrase
-                                            value = re.sub(re.escape(font_name), "ELEGANCE UNVEILED", value, flags=re.IGNORECASE)
-                                        elif key == "text" and "hierarchy" in obj and obj.get("hierarchy") == "secondary":
-                                            # For taglines, use a generic phrase
-                                            value = re.sub(re.escape(font_name), "Crafted Perfection", value, flags=re.IGNORECASE)
-                                        else:
-                                            # For other text, remove the font name
-                                            value = re.sub(re.escape(font_name), "", value, flags=re.IGNORECASE).strip()
+                                        # Simply remove the font name from the text - don't replace with generic phrases
+                                        # The AI should have generated unique text; we just need to remove any accidental font name inclusion
+                                        value = re.sub(re.escape(font_name), "", value, flags=re.IGNORECASE).strip()
+                                        # Clean up any double spaces left behind
+                                        value = re.sub(r'\s+', ' ', value).strip()
                                         obj[key] = value
                             elif key == "items" and isinstance(value, list):
                                 # Handle feature items
