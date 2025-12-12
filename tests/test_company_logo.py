@@ -202,3 +202,7 @@ if __name__ == "__main__":
     success = test_company_logo_integration()
     sys.exit(0 if success else 1)
 
+
+
+
+
