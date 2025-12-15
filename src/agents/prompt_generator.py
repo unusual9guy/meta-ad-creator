@@ -45,7 +45,8 @@ class PromptGeneratorAgent:
                             secondary_font: Optional[str] = None,
                             pricing_font: Optional[str] = None,
                             include_price: bool = True,
-                            logo_path: Optional[str] = None) -> str:
+                            logo_path: Optional[str] = None,
+                            promotion_text: Optional[str] = None) -> str:
         """
         Build system prompt with user-provided fonts and options
         
@@ -55,6 +56,7 @@ class PromptGeneratorAgent:
             pricing_font: User-provided pricing font name (optional)
             include_price: Whether to include pricing information
             logo_path: Path to company logo (optional)
+            promotion_text: Promotion text (e.g., "30% winter sale") (optional)
         """
         
         # Font instructions
@@ -107,7 +109,7 @@ class PromptGeneratorAgent:
               "placement": "BOTTOM-RIGHT CORNER in a consolidated badge."
             }},
             "limited_time_offer": {{
-              "text": "[GENERATE LIMITED TIME OFFER TEXT]",
+              "text": "{'[PROMOTION IS ALREADY IN HEADLINE - DO NOT DUPLICATE HERE. Leave this field empty or use generic text like \"Limited Time Offer\" if needed]' if promotion_text else '[GENERATE LIMITED TIME OFFER TEXT]'}",
               "font": "{pricing_font_name}",
               "style": "INTEGRATE with pricing badge. Use simple, clean text design. Place above price within same container. CRITICAL: PERFECT spelling and grammar.",
               "placement": "INTEGRATED with pricing badge in bottom-right corner."
@@ -157,6 +159,18 @@ class PromptGeneratorAgent:
         selected_background = random.choice(background_options)
         selected_layout = random.choice(layout_options)
         selected_mood = random.choice(mood_options)
+        
+        # Build critical mandates list with conditional pricing instruction
+        if include_price:
+            pricing_mandate = "**Pricing Display:** Create a consolidated pricing badge in the bottom-right corner if pricing is included."
+        else:
+            pricing_mandate = "**Pricing Display:** DO NOT include any pricing information, price tags, discount badges, or pricing elements in the image. The user has explicitly chosen NOT to include pricing. Completely exclude all pricing-related visual elements."
+        
+        # Build headline instruction text based on whether promotion is included
+        if promotion_text:
+            headline_instruction = f'[GENERATE A UNIQUE HEADLINE SPECIFIC TO THIS PRODUCT - Based on the product description, create a compelling headline that: 1) Highlights what makes THIS specific product special, 2) Speaks directly to the target audience\'s desires, 3) Is NOT generic like \'Elegance Unveiled\' or \'Timeless Beauty\' - make it SPECIFIC to this product category and features, 4) Could only work for THIS type of product, 5) **CRITICAL: MUST INCLUDE THE PROMOTION TEXT IN THE HEADLINE** - Integrate the promotion text "{promotion_text}" smoothly and naturally into the headline. **ABSOLUTELY CRITICAL RULES FOR PROMOTION TEXT:** - Use the EXACT, COMPLETE promotion text provided - do NOT abbreviate, truncate, or shorten ANY words - If the text is "30% Winter Sale", you MUST use "30% WINTER SALE" (full text with both words "WINTER" and "SALE" complete), NOT "30% W SALE" or "30% W Sale" or any abbreviation - NEVER abbreviate "Winter" to "W" or "Sale" to "S" - Preserve the complete, full promotion text exactly as provided with ALL words spelled out completely - **DO NOT use pipe symbol "|" as a separator** - Instead, blend the promotion smoothly using: a dash "-", a comma ",", or integrate it naturally at the end - Examples of GOOD integration: "ILLUMINATE WITH GRACE - 30% WINTER SALE" or "ELEVATE YOUR SPACE, 30% WINTER SALE" or "PREMIUM QUALITY 30% WINTER SALE" - Examples of BAD integration: "ELEVATE YOUR SPACE | 30% W SALE" (has pipe and abbreviation) - The promotion should flow naturally with the headline text, not look like a separate element]'
+        else:
+            headline_instruction = '[GENERATE A UNIQUE HEADLINE SPECIFIC TO THIS PRODUCT - Based on the product description, create a 2-6 word headline that: 1) Highlights what makes THIS specific product special, 2) Speaks directly to the target audience\'s desires, 3) Is NOT generic like \'Elegance Unveiled\' or \'Timeless Beauty\' - make it SPECIFIC to this product category and features, 4) Could only work for THIS type of product]'
         
         system_prompt = f"""You are an expert creative director at a top advertising agency.
 Your task is to create a structured JSON prompt for generating PREMIUM Meta ad creatives.
@@ -223,7 +237,7 @@ You must generate a JSON prompt in this EXACT format:
     "text_elements": [
       {{
         "type": "text",
-        "text": "[GENERATE A UNIQUE HEADLINE SPECIFIC TO THIS PRODUCT - Based on the product description, create a 2-6 word headline that: 1) Highlights what makes THIS specific product special, 2) Speaks directly to the target audience's desires, 3) Is NOT generic like 'Elegance Unveiled' or 'Timeless Beauty' - make it SPECIFIC to this product category and features, 4) Could only work for THIS type of product]",
+        "text": "{headline_instruction}",
         "font": "{primary_font or 'professional serif or sans-serif'}",
         "headline_examples_by_category": {{
           "home_decor": ["ARTISAN CRAFTED", "HOME REIMAGINED", "CURATED LIVING", "HANDMADE HERITAGE"],
@@ -294,14 +308,15 @@ You must generate a JSON prompt in this EXACT format:
         "text": "[GENERATE CTA TEXT - e.g., 'SHOP NOW', 'Shop The Collection']",
         "placement": {{
           "position": "bottom-center",
-          "y_offset": -40
+          "y_offset": {120 if include_price else 80}
         }},
         "style": {{
           "background_color": "#D2B48C",
           "text_color": "#2C2C2C",
           "border_radius": 8,
           "padding": "12px 32px"
-        }}
+        }},
+        "instruction": "Place the CTA button BELOW the product with sufficient spacing. Ensure it does NOT overlap with the product. Position it at least 80-120px from the bottom edge, depending on whether pricing is included. The button should be clearly separated from the product."
       }}
     ],
 {price_section}
@@ -327,9 +342,10 @@ You must generate a JSON prompt in this EXACT format:
     "**Background:** Create solid neutral background (light beige #F5F5DC, light brown #D2B48C, or off-white) OR blurred natural setting with 40-50% depth of field blur. No patterns, textures, or gradients in solid backgrounds.",
     "**Product Positioning:** Position product off-center (60% from left OR 40% from left), at 50% from top, occupying 65% of canvas height. Add subtle shadow: soft, diffused, 5-10px blur, 20% opacity, offset 3-5px downward.",
     "**Typography - CRITICAL FONT USAGE RULE:** The 'font' field in each text element is a TECHNICAL SPECIFICATION telling you which font to USE for rendering. It is NOT text to display. NEVER print font names like 'Tan Pearl', 'Calgary', or 'RoxboroughCF' as visible text in the image. Generate UNIQUE product headlines based on what the product actually is. Example: For a photo frame, use the font to render 'FRAME YOUR STORY' - do NOT display the font name as text.",
-    "**Text Placement:** Headline at top-center (80px from top), tagline below headline (140px from top), features at bottom (120px from bottom), CTA button at bottom-center (40px from bottom). Maintain 10% margin from edges.",
+    "**Text Placement:** Headline at top-center (80px from top), tagline below headline (140px from top), features at bottom (120px from bottom), CTA button at bottom-center with proper spacing from product. Maintain 10% margin from edges.",
     "**Feature Icons:** Create 3-5 feature items with simple line-art icons and descriptive text. Arrange horizontally at bottom section. Icons: 40-50px, text: 16-20px font size. Even spacing across width.",
-    "**CTA Button:** Rounded corners (8px), contrasting background color (#D2B48C or #2C2C2C), white or dark text, centered at bottom. Font size: 18-24px. Padding: 12px 32px.",
+    "**CTA Button:** Rounded corners (8px), contrasting background color (#D2B48C or #2C2C2C), white or dark text, centered at bottom. Font size: 18-24px. Padding: 12px 32px. **CRITICAL: Position the CTA button BELOW the product with at least 60-80px gap to prevent overlap. The button must be clearly separated from the product and not overlap with it.**",
+    "{pricing_mandate}",
     "**Spelling:** CRITICAL - PERFECT spelling and grammar. AI image generation often has spelling errors - be extra careful. Review all text before including in JSON.",
     "**Output Format - SQUARE IMAGE:** Generate final image in 1:1 aspect ratio (1080x1080 pixels). The image MUST be square. Product must be perfectly composed within this square frame.",
     "**Professional Quality:** The image should look like professional product photography, not AI-generated. Use realistic lighting, natural shadows, and authentic composition."
@@ -342,13 +358,13 @@ Make it specific, actionable, and tailored for Meta ad creative generation.
 IMPORTANT: The input product image has no background. You must instruct the AI to CREATE a realistic, natural background that complements the product.
 
 TEXT GENERATION REQUIREMENTS:
-- Generate complete, compelling text for ALL text elements
-- Headline: Create a catchy, one-liner headline (2-6 words) that is memorable and impactful
+        - Generate complete, compelling text for ALL text elements
+        - Headline: Create a catchy, one-liner headline (2-6 words) that is memorable and impactful
 - Tagline: Create a catchy, one-liner tagline that is persuasive and memorable
 - Features: Generate 3-5 product features with simple, clear descriptions
 - CTA: Create compelling call-to-action text (e.g., "SHOP NOW", "Shop The Collection")
 - Pricing: If included, generate both original and discounted prices with limited time offer text
-- Ensure ALL text is complete and not cut off
+        - Ensure ALL text is complete and not cut off
 - Use professional advertising copy that matches high-end product advertisements
 - CRITICAL: Ensure ALL text has correct spelling and grammar - AI image generation often has spelling errors
 - Make headlines and taglines catchy, memorable one-liners that stick in the mind
@@ -386,37 +402,86 @@ TEXT GENERATION REQUIREMENTS:
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode('utf-8')
     
-    def generate_prompt(self, image_path: str, description: str, 
+    def generate_prompt(self, image_path: str, 
+                       product_persona: Optional[Dict[str, Any]] = None,
+                       description: Optional[str] = None,
                        user_inputs: Optional[Dict[str, Any]] = None,
                        primary_font: Optional[str] = None,
                        secondary_font: Optional[str] = None,
                        pricing_font: Optional[str] = None,
                        include_price: bool = True,
-                       logo_path: Optional[str] = None) -> Dict[str, Any]:
+                       logo_path: Optional[str] = None,
+                       promotion_text: Optional[str] = None) -> Dict[str, Any]:
         """
-        Generate structured prompt based on image and description
+        Generate structured prompt based on product persona or legacy parameters
         
         Args:
             image_path: Path to the product image
-            description: Product description
-            user_inputs: Optional user inputs for target audience, price, etc.
+            product_persona: Structured product persona from Agent 1 (preferred)
+            description: Product description (legacy, used if product_persona not provided)
+            user_inputs: Optional user inputs (legacy, used if product_persona not provided)
             primary_font: User-provided primary font name
             secondary_font: User-provided secondary font name (optional)
             pricing_font: User-provided pricing font name (optional)
             include_price: Whether to include pricing information
             logo_path: Path to company logo (optional)
+            promotion_text: Promotion text (e.g., "30% winter sale") (optional)
         
         Returns:
             Dictionary containing the generated prompt and metadata
         """
         try:
+            # Extract information from product_persona if provided, otherwise use legacy parameters
+            if product_persona:
+                ai_analysis = product_persona.get("ai_analysis", {})
+                user_data = product_persona.get("user_inputs", {})
+                
+                product_description = user_data.get("usp", "") or ai_analysis.get("raw_analysis", "") or description or ""
+                target_audience = user_data.get("target_audience", "")
+                product_name = user_data.get("product_name", "")
+                promotion_data = user_data.get("promotion", {})
+                
+                # Use promotion from persona if available
+                if promotion_data.get("included", False):
+                    include_price = True
+                    # Use promotion_text if provided, otherwise construct from persona
+                    if not promotion_text and promotion_data.get("percentage"):
+                        promotion_text = f"{promotion_data.get('percentage', 0)}% OFF"
+                
+                # Build comprehensive product context
+                product_context = f"""
+PRODUCT ANALYSIS (from AI):
+- Product Type: {ai_analysis.get('product_type', 'Not specified')}
+- Materials: {', '.join(ai_analysis.get('materials', [])) if ai_analysis.get('materials') else 'Not specified'}
+- Key Features: {', '.join(ai_analysis.get('features', [])) if ai_analysis.get('features') else 'Not specified'}
+- Style: {ai_analysis.get('style', 'Not specified')}
+- Use Cases: {', '.join(ai_analysis.get('suggested_use_cases', [])) if ai_analysis.get('suggested_use_cases') else 'Not specified'}
+
+USER PROVIDED INFORMATION:
+- Product Name: {product_name}
+- USP/Use Case: {user_data.get('usp', 'Not provided')}
+- Target Audience: {target_audience}
+- Additional Comments: {user_data.get('additional_comments', 'None')}
+"""
+            else:
+                # Legacy mode: use description and user_inputs
+                product_description = description or ""
+                target_audience = user_inputs.get('target_audience', 'general') if user_inputs else 'general'
+                product_name = ""
+                product_context = f"""
+Product Description: {product_description}
+Target Audience: {target_audience}
+User Inputs: {user_inputs or "None provided"}
+"""
+            
             # Build system prompt with user options
             system_prompt = self._build_system_prompt(
                 primary_font=primary_font,
                 secondary_font=secondary_font,
                 pricing_font=pricing_font,
                 include_price=include_price,
-                logo_path=logo_path
+                logo_path=logo_path,
+                promotion_text=promotion_text
             )
             
             # Encode image
@@ -433,6 +498,11 @@ TEXT GENERATION REQUIREMENTS:
             
             font_text = "\n".join(font_info) if font_info else "No specific fonts provided - use professional fonts"
             
+            # Prepare promotion information
+            promotion_info = ""
+            if promotion_text and include_price:
+                promotion_info = f"\nPromotion: {promotion_text}"
+            
             # Prepare messages for Gemini
             messages = [
                 SystemMessage(content=system_prompt),
@@ -440,62 +510,74 @@ TEXT GENERATION REQUIREMENTS:
                     {
                         "type": "text",
                         "text": f"""
-                        Product Description: {description}
-                        
-                        User Inputs: {user_inputs or "None provided"}
-                        
-                        Font Information:
-                        {font_text}
-                        
-                        Please analyze this product image and generate a structured prompt for Google's Nano Banana model.
-                        The product image has no background, so you must instruct the AI to CREATE a realistic, natural background that complements the product.
-                        
-                        CRITICAL REQUIREMENTS FOR UNIQUE TEXT GENERATION:
-                        
+{product_context}
+
+Font Information:
+{font_text}
+{promotion_info}
+
+Please analyze this product image and generate a structured prompt for Google's Nano Banana model.
+The product image has no background, so you must instruct the AI to CREATE a realistic, natural background that complements the product.
+
+CRITICAL REQUIREMENTS FOR UNIQUE TEXT GENERATION:
+
                         **HEADLINE MUST BE UNIQUE TO THIS PRODUCT:**
-                        - Analyze the product description: "{description}"
-                        - Analyze the target audience: "{user_inputs.get('target_audience', 'general') if user_inputs else 'general'}"
+                        - Analyze the product information above
+                        - Analyze the target audience: "{target_audience}"
                         - Create a headline that could ONLY work for this specific product
                         - DO NOT use generic phrases like "Elegance Unveiled", "Timeless Beauty", "Premium Quality"
                         - Instead, reference: the product material, its function, the lifestyle it enables, or the problem it solves
                         - Examples: For a wooden organizer → "DECLUTTER IN STYLE" or "ORGANIZE ARTFULLY"
                         - Examples: For a photo frame → "FRAME YOUR STORY" or "MEMORIES DISPLAYED"
                         - The headline should make someone instantly understand what the product is about
-                        
-                        **TAGLINE MUST SPEAK TO THE TARGET AUDIENCE:**
-                        - Who is the target audience? Think about their desires, pain points, aspirations
-                        - Create a tagline that makes them think "this is exactly what I need"
-                        - Reference their lifestyle, values, or the transformation the product offers
-                        - DO NOT use vague phrases like "Crafted Perfection" or "Quality You Deserve"
-                        - Be SPECIFIC about the benefit or emotion
-                        
-                        **OTHER REQUIREMENTS:**
-                        - Use EXACTLY the fonts specified above
-                        - Features: Generate 3-5 product-specific features based on the actual product
-                        - CTA: Create compelling call-to-action text
-                        - Ensure ALL text has correct spelling and grammar
-                        - Place text elements strategically based on the layout direction
-                        
-                        **ABSOLUTELY CRITICAL - FONT NAME PROHIBITION (READ THIS CAREFULLY):**
-                        - NEVER use font names (like "Tan Pearl", "Calgary", "RoxboroughCF") as the actual text content
-                        - NEVER use font names as product names, collection names, or any displayed text
-                        - The "font" field is a specification - it tells which font to USE, not what to DISPLAY
-                        - Generate UNIQUE product-related text based on what the product actually is
-                        - Use the specified fonts to render that text, but never display the font names themselves
-                        - Example: For an organizer product with font "Tan Pearl", generate "ORGANIZE ARTFULLY" and use Tan Pearl font to render it
-                        - Example: For a photo frame product, generate "FRAME YOUR STORY" or "MEMORIES DISPLAYED"
-                        - WRONG: Putting "Tan Pearl" or any font name as text in the image
-                        - WRONG: Using generic phrases like "Elegance Unveiled" for every product
-                        - CORRECT: Creating a headline specific to THIS product type and the target audience
-                        - DO NOT create a product name or collection name that matches the font name
-                        - If you see a font name in the font field, use that font but generate DIFFERENT text content
-                        - The text in "text" fields should NEVER match or contain the font name from the "font" field
-                        
-                        CRITICAL JSON FORMATTING:
-                        - Escape all quotes in text values: use \" instead of "
-                        - Keep all text on single lines (no actual newlines in JSON strings)
-                        - Ensure all brackets and braces are properly closed
-                        - Return complete, valid JSON that can be parsed without errors
+                        {f'**CRITICAL - PROMOTION IN HEADLINE:**' if promotion_text else ''}
+                        {f'- The promotion text "{promotion_text}" MUST be integrated into the headline itself' if promotion_text else ''}
+                        {f'- **ABSOLUTELY CRITICAL: Preserve the promotion text EXACTLY as provided - do NOT abbreviate, truncate, or shorten ANY words**' if promotion_text else ''}
+                        {f'- If the promotion text is "30% Winter Sale", you MUST display it as "30% WINTER SALE" (with BOTH words "WINTER" and "SALE" complete), NOT "30% W SALE" or "30% W Sale" or any abbreviation' if promotion_text else ''}
+                        {f'- NEVER abbreviate "Winter" to "W" or "Sale" to "S" - always use the complete, full words' if promotion_text else ''}
+                        {f'- **DO NOT use pipe symbol "|" as a separator** - it looks unprofessional' if promotion_text else ''}
+                        {f'- Instead, blend the promotion smoothly using: a dash "-", a comma ",", or integrate it naturally at the end without separators' if promotion_text else ''}
+                        {f'- Examples of GOOD integration: "ILLUMINATE WITH GRACE - 30% WINTER SALE" or "ELEVATE YOUR SPACE, 30% WINTER SALE" or "PREMIUM QUALITY 30% WINTER SALE"' if promotion_text else ''}
+                        {f'- Examples of BAD integration: "ELEVATE YOUR SPACE | 30% W SALE" (has pipe and abbreviation - DO NOT DO THIS)' if promotion_text else ''}
+                        {f'- The promotion should flow naturally with the headline text, blending smoothly without looking like a separate element' if promotion_text else ''}
+                        {f'- Do NOT put the promotion in a separate element - it must be in the headline text field' if promotion_text else ''}
+
+**TAGLINE MUST SPEAK TO THE TARGET AUDIENCE:**
+- Who is the target audience? Think about their desires, pain points, aspirations
+- Create a tagline that makes them think "this is exactly what I need"
+- Reference their lifestyle, values, or the transformation the product offers
+- DO NOT use vague phrases like "Crafted Perfection" or "Quality You Deserve"
+- Be SPECIFIC about the benefit or emotion
+
+**OTHER REQUIREMENTS:**
+- Use EXACTLY the fonts specified above
+- Features: Generate 3-5 product-specific features based on the actual product
+- CTA: Create compelling call-to-action text. **CRITICAL: Position the CTA button BELOW the product with sufficient spacing (at least 60-80px gap). The button must NOT overlap with the product. Ensure clear separation between product and button.**
+- Ensure ALL text has correct spelling and grammar
+- Place text elements strategically based on the layout direction
+{promotion_info and f"- Promotion: The promotion text '{promotion_text}' is already integrated into the headline - do NOT duplicate it elsewhere" or ""}
+{f"**CRITICAL - PRICING EXCLUSION:** The user has chosen NOT to include pricing. DO NOT include any price tags, pricing badges, discount displays, or pricing information anywhere in the image. Completely exclude all pricing elements." if not include_price else ""}
+
+**ABSOLUTELY CRITICAL - FONT NAME PROHIBITION (READ THIS CAREFULLY):**
+- NEVER use font names (like "Tan Pearl", "Calgary", "RoxboroughCF") as the actual text content
+- NEVER use font names as product names, collection names, or any displayed text
+- The "font" field is a specification - it tells which font to USE, not what to DISPLAY
+- Generate UNIQUE product-related text based on what the product actually is
+- Use the specified fonts to render that text, but never display the font names themselves
+- Example: For an organizer product with font "Tan Pearl", generate "ORGANIZE ARTFULLY" and use Tan Pearl font to render it
+- Example: For a photo frame product, generate "FRAME YOUR STORY" or "MEMORIES DISPLAYED"
+- WRONG: Putting "Tan Pearl" or any font name as text in the image
+- WRONG: Using generic phrases like "Elegance Unveiled" for every product
+- CORRECT: Creating a headline specific to THIS product type and the target audience
+- DO NOT create a product name or collection name that matches the font name
+- If you see a font name in the font field, use that font but generate DIFFERENT text content
+- The text in "text" fields should NEVER match or contain the font name from the "font" field
+
+CRITICAL JSON FORMATTING:
+- Escape all quotes in text values: use \" instead of "
+- Keep all text on single lines (no actual newlines in JSON strings)
+- Ensure all brackets and braces are properly closed
+- Return complete, valid JSON that can be parsed without errors
                         """
                     },
                     {
@@ -525,13 +607,15 @@ TEXT GENERATION REQUIREMENTS:
                 "structured_prompt": structured_prompt,
                 "metadata": {
                     "image_path": image_path,
+                    "product_persona": product_persona,
                     "description": description,
                     "user_inputs": user_inputs,
                     "primary_font": primary_font,
                     "secondary_font": secondary_font,
                     "pricing_font": pricing_font,
                     "include_price": include_price,
-                    "logo_path": logo_path
+                    "logo_path": logo_path,
+                    "promotion_text": promotion_text
                 }
             }
             
@@ -543,6 +627,7 @@ TEXT GENERATION REQUIREMENTS:
                 "structured_prompt": None,
                 "metadata": {
                     "image_path": image_path,
+                    "product_persona": product_persona,
                     "description": description,
                     "user_inputs": user_inputs
                 }

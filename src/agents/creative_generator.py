@@ -52,7 +52,7 @@ class CreativeGeneratorAgent:
         if custom_font_names:
             self.font_names_to_strip.extend(custom_font_names)
     
-    def _strip_font_names_from_prompt(self, prompt: str, additional_fonts: Optional[List[str]] = None) -> str:
+    def _strip_font_names_from_prompt(self, prompt: str, additional_fonts: Optional[List[str]] = None, include_price: bool = True) -> str:
         """
         Remove all font name references from the prompt before sending to Nano Banana.
         The image generation model interprets font names as text to display,
@@ -101,6 +101,19 @@ class CreativeGeneratorAgent:
                                 keys_to_remove.append(key)
                         for key in keys_to_remove:
                             del obj[key]
+                        
+                        # Remove pricing elements if include_price is False
+                        if not include_price:
+                            if 'pricing_display' in obj:
+                                del obj['pricing_display']
+                            if 'limited_time_offer' in obj:
+                                del obj['limited_time_offer']
+                            # Also check in typography_and_layout
+                            if 'typography_and_layout' in obj and isinstance(obj['typography_and_layout'], dict):
+                                if 'pricing_display' in obj['typography_and_layout']:
+                                    del obj['typography_and_layout']['pricing_display']
+                                if 'limited_time_offer' in obj['typography_and_layout']:
+                                    del obj['typography_and_layout']['limited_time_offer']
                         
                         # Clean text fields
                         for key, value in obj.items():
@@ -224,7 +237,19 @@ CRITICAL INSTRUCTIONS FOR IMAGE GENERATION:
    - All text should be actual product copy (headlines, taglines, prices, features)
    - Never render font names as visible text
 
-5. PRODUCT: Keep the product as the hero element, styled according to the layout direction above.
+5. PROMOTION TEXT: If a promotion text is included in the headline, preserve it EXACTLY as written.
+   - Do NOT abbreviate, truncate, or shorten ANY words in the promotion text
+   - If the headline says "30% WINTER SALE", display it as "30% WINTER SALE" (with BOTH words complete), NOT "30% W SALE" or "30% W Sale"
+   - NEVER abbreviate "Winter" to "W" or "Sale" to "S" - always use complete, full words
+   - Keep the full, complete promotion text exactly as provided with ALL words spelled out completely
+   - Examples: "30% Winter Sale" should be "30% WINTER SALE" (full text), not "30% W Sale" or "30% W SALE"
+   - Examples: "Limited Time Offer" should be "LIMITED TIME OFFER", not "LTO"
+   - **DO NOT use pipe symbol "|" as a separator** - use dashes "-", commas ",", or blend naturally
+   - The promotion should blend smoothly with the headline, not look like a separate element
+
+6. PRICING: {"DO NOT include any pricing information, price tags, discount badges, or pricing elements anywhere in the image. Completely exclude all pricing-related visual elements." if not include_price else "Include pricing information as specified in the prompt."}
+
+7. PRODUCT: Keep the product as the hero element, styled according to the layout direction above.
 
 """
         cleaned_prompt = critical_instructions + cleaned_prompt
@@ -233,7 +258,8 @@ CRITICAL INSTRUCTIONS FOR IMAGE GENERATION:
     
     def generate_creative(self, image_path: str, prompt: str, product_description: str = "", 
                          logo_path: Optional[str] = None,
-                         font_names: Optional[List[str]] = None) -> Dict[str, Any]:
+                         font_names: Optional[List[str]] = None,
+                         include_price: bool = True) -> Dict[str, Any]:
         """
         Generate Meta ad creative by feeding prompt directly to Nano Banana
         
@@ -265,7 +291,8 @@ CRITICAL INSTRUCTIONS FOR IMAGE GENERATION:
             output_path = os.path.join(output_dir, filename)
             
             # CRITICAL: Strip all font names from the prompt before sending to Nano Banana
-            cleaned_prompt = self._strip_font_names_from_prompt(prompt, font_names)
+            # Also remove pricing elements if include_price is False
+            cleaned_prompt = self._strip_font_names_from_prompt(prompt, font_names, include_price=include_price)
             
             # Load the images
             image = Image.open(image_path)
@@ -276,11 +303,26 @@ CRITICAL INSTRUCTIONS FOR IMAGE GENERATION:
                 logo_image = Image.open(logo_path)
                 contents.append(logo_image)
             
-            # Feed prompt and images directly to Nano Banana
-            response = self.client.models.generate_content(
-                model="gemini-2.5-flash-image-preview",
-                contents=contents,
-            )
+            # Try Nano Banana Pro first, fallback to Nano Banana
+            model_name = "gemini-2.5-flash-image-preview"
+            try:
+                # Try Pro version first
+                response = self.client.models.generate_content(
+                    model="gemini-2.5-flash-image-preview-pro",
+                    contents=contents,
+                )
+                model_name = "gemini-2.5-flash-image-preview-pro"
+            except Exception as pro_error:
+                # Fallback to regular Nano Banana
+                try:
+                    response = self.client.models.generate_content(
+                        model="gemini-2.5-flash-image-preview",
+                        contents=contents,
+                    )
+                    model_name = "gemini-2.5-flash-image-preview"
+                except Exception as fallback_error:
+                    # If both fail, raise the original error
+                    raise pro_error
             
             # Process the response
             result_text = ""
@@ -305,7 +347,8 @@ CRITICAL INSTRUCTIONS FOR IMAGE GENERATION:
                 "metadata": {
                     "image_path": image_path,
                     "prompt_used": cleaned_prompt,
-                    "original_prompt": prompt
+                    "original_prompt": prompt,
+                    "model_used": model_name
                 }
             }
             
