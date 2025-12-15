@@ -328,7 +328,7 @@ if 'secondary_font' not in st.session_state:
 if 'pricing_font' not in st.session_state:
     st.session_state.pricing_font = None
 if 'include_price' not in st.session_state:
-    st.session_state.include_price = True
+    st.session_state.include_price = False
 if 'promotion_text' not in st.session_state:
     st.session_state.promotion_text = None
 
@@ -345,7 +345,7 @@ def reset_workflow():
     st.session_state.primary_font = None
     st.session_state.secondary_font = None
     st.session_state.pricing_font = None
-    st.session_state.include_price = True
+    st.session_state.include_price = False
     st.session_state.promotion_text = None
 
 def save_uploaded_file(uploaded_file):
@@ -779,12 +779,8 @@ elif st.session_state.workflow_step == 'prompt_input':
             st.session_state.promotion_text = promotion_text
             st.markdown("---")
         
-        st.markdown("**💰 Pricing**")
-        include_price = st.checkbox(
-            "💰 Include Price Tag",
-            value=st.session_state.include_price if st.session_state.include_price is not None else True,
-            help="Check to include pricing information in the ad"
-        )
+        # Pricing temporarily disabled in UI (handled by backend defaults)
+        include_price = False
         
         st.markdown("---")
         st.markdown("**🎨 Typography Settings**")
@@ -801,14 +797,7 @@ elif st.session_state.workflow_step == 'prompt_input':
             help="Enter font name for taglines and secondary text (leave empty to use primary font)"
         )
         
-        if include_price:
-            pricing_font = st.text_input(
-                "📝 Pricing Font (Optional)",
-                placeholder="e.g., RoxboroughCF, Montserrat Bold",
-                help="Enter font name for pricing text (leave empty to use primary font in bold)"
-            )
-        else:
-            pricing_font = ""
+        pricing_font = ""
         
         st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
         
@@ -822,11 +811,12 @@ elif st.session_state.workflow_step == 'prompt_input':
             if not primary_font:
                 st.warning("⚠️ Please provide a primary font name")
             else:
+                # Ensure price tag is disabled for now
                 st.session_state.workflow_step = 'generating_prompt'
                 st.session_state.primary_font = primary_font
                 st.session_state.secondary_font = secondary_font if secondary_font else None
-                st.session_state.pricing_font = pricing_font if (include_price and pricing_font) else None
-                st.session_state.include_price = include_price
+                st.session_state.pricing_font = None
+                st.session_state.include_price = False
                 st.rerun()
     
     st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
