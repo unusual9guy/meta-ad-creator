@@ -11,6 +11,7 @@ from PIL import Image
 from dotenv import load_dotenv
 
 # Import agents
+from agents.product_analyser import ProductAnalyserAgent
 from agents.background_remover import BackgroundRemoverAgent
 from agents.image_cropper import ImageCropperAgent
 from agents.prompt_generator import PromptGeneratorAgent
@@ -304,6 +305,10 @@ if 'uploaded_image' not in st.session_state:
     st.session_state.uploaded_image = None
 if 'image_path' not in st.session_state:
     st.session_state.image_path = None
+if 'product_persona' not in st.session_state:
+    st.session_state.product_persona = None
+if 'ai_analysis' not in st.session_state:
+    st.session_state.ai_analysis = None
 if 'white_bg_path' not in st.session_state:
     st.session_state.white_bg_path = None
 if 'cropped_path' not in st.session_state:
@@ -324,10 +329,14 @@ if 'pricing_font' not in st.session_state:
     st.session_state.pricing_font = None
 if 'include_price' not in st.session_state:
     st.session_state.include_price = True
+if 'promotion_text' not in st.session_state:
+    st.session_state.promotion_text = None
 
 def reset_workflow():
     """Reset the workflow to start over"""
     st.session_state.workflow_step = 'upload'
+    st.session_state.product_persona = None
+    st.session_state.ai_analysis = None
     st.session_state.white_bg_path = None
     st.session_state.cropped_path = None
     st.session_state.prompt = None
@@ -337,6 +346,7 @@ def reset_workflow():
     st.session_state.secondary_font = None
     st.session_state.pricing_font = None
     st.session_state.include_price = True
+    st.session_state.promotion_text = None
 
 def save_uploaded_file(uploaded_file):
     """Save uploaded file to temporary directory"""
@@ -360,16 +370,19 @@ with st.sidebar:
     **1. Upload Image**  
     Select your product image file.
     
-    **2. Process Image**  
+    **2. Analyze Product (Agent 1)**  
+    AI analyzes your product and collects product information.
+    
+    **3. Process Image (Agent 2)**  
     AI removes background and crops to 1:1 ratio.
     
-    **3. Enter Details**  
-    Provide product description, audience, and price.
+    **4. Configure Ad (Agent 3 Setup)**  
+    Set logo, promotion, price, and fonts.
     
-    **4. Review Prompt**  
-    Edit headline, footer, and offer text.
+    **5. Generate Prompt (Agent 3)**  
+    AI creates structured prompt for ad generation.
     
-    **5. Generate Creative**  
+    **6. Generate Creative (Agent 4)**  
     Get your premium Meta ad creative!
     """)
     
@@ -415,13 +428,184 @@ if st.session_state.workflow_step == 'upload':
         
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.button("🚀 Create Generative", width='stretch', type="primary"):
-                st.session_state.workflow_step = 'processing'
+            if st.button("🔍 Analyze Product", width='stretch', type="primary"):
+                st.session_state.workflow_step = 'product_analysis'
                 st.rerun()
 
-# Workflow Step 2: Processing
+# Workflow Step 2: Product Analysis (Agent 1)
+elif st.session_state.workflow_step == 'product_analysis':
+    st.markdown("### 🤖 Agent 1: Professional Product Analyser")
+    st.markdown("Analyzing your product image and collecting product information.")
+    
+    st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
+    
+    # Step 2a: AI Analysis
+    if st.session_state.ai_analysis is None:
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        status_text.markdown("**🔍 Analyzing product image with AI...**")
+        progress_bar.progress(30)
+        
+        try:
+            # Check if API key is available
+            analyser_key = os.getenv("GOOGLE_API_KEY_ANALYSER") or os.getenv("GOOGLE_API_KEY")
+            if not analyser_key:
+                st.error("❌ Google API key not found. Please set GOOGLE_API_KEY_ANALYSER or GOOGLE_API_KEY in your .env file.")
+                st.stop()
+            
+            product_analyser = ProductAnalyserAgent()
+            analysis_result = product_analyser.analyze_product(st.session_state.image_path)
+            
+            if not analysis_result["success"]:
+                st.error(f"❌ Product analysis failed: {analysis_result.get('error', 'Unknown error')}")
+                if st.button("🔙 Go Back"):
+                    st.session_state.workflow_step = 'upload'
+                    st.rerun()
+                st.stop()
+            
+            st.session_state.ai_analysis = analysis_result
+            progress_bar.progress(100)
+            status_text.markdown("**✅ Product analysis complete!**")
+            
+        except Exception as e:
+            st.error(f"❌ Error during product analysis: {str(e)}")
+            if st.button("🔙 Go Back"):
+                st.session_state.workflow_step = 'upload'
+                st.rerun()
+            st.stop()
+    
+    # Display AI Analysis Results
+    if st.session_state.ai_analysis:
+        st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
+        st.success("✅ AI Analysis Complete!")
+        
+        structured = st.session_state.ai_analysis.get("structured_analysis", {})
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**📊 AI Analysis Results**")
+            st.markdown(f"**Product Type:** {structured.get('product_type', 'Not detected')}")
+            st.markdown(f"**Materials:** {', '.join(structured.get('materials', [])) if structured.get('materials') else 'Not detected'}")
+            st.markdown(f"**Style:** {structured.get('style', 'Not detected')}")
+        
+        with col2:
+            st.markdown("**🔍 Key Features**")
+            features = structured.get('features', [])
+            if features:
+                for feature in features[:5]:  # Show first 5 features
+                    st.markdown(f"- {feature}")
+            else:
+                st.markdown("No features detected")
+        
+        st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
+        
+        # Step 2b: Collect User Inputs
+        st.markdown("### 📝 Provide Product Information")
+        st.markdown("Please fill in the details about your product:")
+        
+        with st.form("product_info_form"):
+            product_name = st.text_input(
+                "📦 Product Name",
+                placeholder="e.g., Premium Wooden Photo Frame",
+                help="Enter the name of your product"
+            )
+            
+            product_usp = st.text_area(
+                "💡 Product USP / Use Case",
+                placeholder="e.g., Handcrafted photo frame with mother-of-pearl inlay, perfect for displaying cherished memories",
+                help="Describe what makes your product unique and how it's used",
+                height=100
+            )
+            
+            target_audience = st.text_input(
+                "👥 Target Audience",
+                placeholder="e.g., Home decor enthusiasts, luxury buyers, gift givers",
+                help="Who is this product for?"
+            )
+            
+            st.markdown("---")
+            st.markdown("**💰 Promotion Details**")
+            
+            include_promotion = st.checkbox(
+                "🎯 Include Promotion",
+                value=False,
+                help="Check if you want to include a promotion in the ad"
+            )
+            
+            promotion_percentage = None
+            before_price = ""
+            after_price = ""
+            
+            if include_promotion:
+                col1, col2 = st.columns(2)
+                with col1:
+                    promotion_percentage = st.number_input(
+                        "📊 Promotion Percentage",
+                        min_value=0,
+                        max_value=100,
+                        value=30,
+                        help="Discount percentage (e.g., 30 for 30% off)"
+                    )
+                    before_price = st.text_input(
+                        "💰 Original Price",
+                        placeholder="e.g., Rs. 2999",
+                        help="Price before discount"
+                    )
+                with col2:
+                    after_price = st.text_input(
+                        "💰 Discounted Price",
+                        placeholder="e.g., Rs. 1899",
+                        help="Price after discount"
+                    )
+            
+            additional_comments = st.text_area(
+                "📝 Additional Comments",
+                placeholder="Any additional information or specific requirements for the ad creative",
+                help="Optional: Add any specific requirements or notes",
+                height=80
+            )
+            
+            submitted = st.form_submit_button("💾 Save Product Info & Continue", width='stretch', type="primary")
+            
+            if submitted:
+                if not product_usp or not target_audience:
+                    st.warning("⚠️ Please fill in Product USP and Target Audience")
+                else:
+                    # Create user inputs dictionary
+                    user_inputs = {
+                        "product_name": product_name,
+                        "usp": product_usp,
+                        "target_audience": target_audience,
+                        "promotion": {
+                            "included": include_promotion,
+                            "percentage": promotion_percentage if include_promotion else 0,
+                            "before_price": before_price if include_promotion else "",
+                            "after_price": after_price if include_promotion else ""
+                        },
+                        "additional_comments": additional_comments
+                    }
+                    
+                    # Create product persona
+                    product_analyser = ProductAnalyserAgent()
+                    product_persona = product_analyser.create_product_persona(
+                        st.session_state.ai_analysis,
+                        user_inputs
+                    )
+                    
+                    st.session_state.product_persona = product_persona
+                    st.session_state.workflow_step = 'processing'
+                    st.rerun()
+        
+        st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("🔙 Go Back", width='stretch'):
+                st.session_state.workflow_step = 'upload'
+                st.rerun()
+
+# Workflow Step 3: Background Removal & Cropping (Agent 2)
 elif st.session_state.workflow_step == 'processing':
-    st.markdown("### ⚙️ Processing Image")
+    st.markdown("### ⚙️ Agent 2: Background Remover + Cropper")
     st.markdown("Removing background and cropping your image to the perfect 1:1 ratio for Meta ads.")
     
     st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
@@ -490,7 +674,7 @@ elif st.session_state.workflow_step == 'processing':
         
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.button("✅ Confirm & Generate Prompt", width='stretch', type="primary"):
+            if st.button("✅ Confirm & Continue to Prompt Setup", width='stretch', type="primary"):
                 st.session_state.workflow_step = 'prompt_input'
                 st.rerun()
         
@@ -506,10 +690,10 @@ elif st.session_state.workflow_step == 'processing':
             reset_workflow()
             st.rerun()
 
-# Workflow Step 3: Prompt Input
+# Workflow Step 4: Prompt Generation Setup (Agent 3 Inputs)
 elif st.session_state.workflow_step == 'prompt_input':
-    st.markdown("### 📝 Step 2: Product Details")
-    st.markdown("Provide information about your product to generate the perfect ad creative.")
+    st.markdown("### ⚙️ Agent 3 Setup: Configure Ad Creative")
+    st.markdown("Configure logo, promotion, pricing, and typography for your ad creative.")
     
     st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
     
@@ -573,20 +757,33 @@ elif st.session_state.workflow_step == 'prompt_input':
     
     st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
     
-    with st.form("product_details_form"):
-        st.markdown("**Fill in the product information:**")
+    # Check if promotion is included in product persona
+    promotion_included = False
+    if st.session_state.product_persona:
+        promotion_data = st.session_state.product_persona.get("user_inputs", {}).get("promotion", {})
+        promotion_included = promotion_data.get("included", False)
+    
+    with st.form("prompt_setup_form"):
+        st.markdown("**Configure ad creative settings:**")
         st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
         
-        product_description = st.text_input(
-            "📄 Product Description",
-            placeholder="e.g., Premium wooden photo frame with mother-of-pearl inlay",
-            help="Describe your product in detail"
-        )
+        # Promotion text input (if promotion is included)
+        if promotion_included:
+            st.markdown("**🎯 Promotion**")
+            promotion_text = st.text_input(
+                "📢 Promotion Text",
+                value=st.session_state.promotion_text or "",
+                placeholder="e.g., 30% Winter Sale, Limited Time Offer, Flash Sale",
+                help="Enter the promotion text to display in the ad"
+            )
+            st.session_state.promotion_text = promotion_text
+            st.markdown("---")
         
-        target_audience = st.text_input(
-            "👥 Target Audience",
-            placeholder="e.g., Home decor enthusiasts, luxury buyers",
-            help="Who is this product for?"
+        st.markdown("**💰 Pricing**")
+        include_price = st.checkbox(
+            "💰 Include Price Tag",
+            value=st.session_state.include_price if st.session_state.include_price is not None else True,
+            help="Check to include pricing information in the ad"
         )
         
         st.markdown("---")
@@ -604,25 +801,13 @@ elif st.session_state.workflow_step == 'prompt_input':
             help="Enter font name for taglines and secondary text (leave empty to use primary font)"
         )
         
-        include_price = st.checkbox(
-            "💰 Include Price Tag",
-            value=True,
-            help="Check to include pricing information in the ad"
-        )
-        
         if include_price:
-            price = st.text_input(
-                "💰 Price Information",
-                placeholder="e.g., before 2999 Rs after 1899 Rs",
-                help="Original price and discounted price"
-            )
             pricing_font = st.text_input(
                 "📝 Pricing Font (Optional)",
                 placeholder="e.g., RoxboroughCF, Montserrat Bold",
                 help="Enter font name for pricing text (leave empty to use primary font in bold)"
             )
         else:
-            price = ""
             pricing_font = ""
         
         st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
@@ -634,17 +819,10 @@ elif st.session_state.workflow_step == 'prompt_input':
         submitted = st.form_submit_button("🚀 Generate Prompt", width='stretch', type="primary")
         
         if submitted:
-            if not product_description or not target_audience:
-                st.warning("⚠️ Please fill in product description and target audience")
-            elif not primary_font:
+            if not primary_font:
                 st.warning("⚠️ Please provide a primary font name")
-            elif include_price and not price:
-                st.warning("⚠️ Please provide price information if price tag is enabled")
             else:
                 st.session_state.workflow_step = 'generating_prompt'
-                st.session_state.product_description = product_description
-                st.session_state.target_audience = target_audience
-                st.session_state.price = price if include_price else ""
                 st.session_state.primary_font = primary_font
                 st.session_state.secondary_font = secondary_font if secondary_font else None
                 st.session_state.pricing_font = pricing_font if (include_price and pricing_font) else None
@@ -658,10 +836,10 @@ elif st.session_state.workflow_step == 'prompt_input':
             st.session_state.workflow_step = 'processing'
             st.rerun()
 
-# Workflow Step 4: Generating Prompt
+# Workflow Step 5: Prompt Generation (Agent 3)
 elif st.session_state.workflow_step == 'generating_prompt':
-    st.markdown("### 🤖 Generating Prompt")
-    st.markdown("Analyzing your product and creating a structured prompt for the AI model.")
+    st.markdown("### 🤖 Agent 3: Prompt Generator")
+    st.markdown("Creating a structured prompt for the AI model based on your product information.")
     
     st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
     
@@ -674,20 +852,16 @@ elif st.session_state.workflow_step == 'generating_prompt':
         # Agent will automatically use GOOGLE_API_KEY_PROMPT or fall back to GOOGLE_API_KEY
         prompt_generator = PromptGeneratorAgent()
         
-        user_inputs = {
-            "target_audience": st.session_state.target_audience,
-            "price": st.session_state.price if st.session_state.include_price else None
-        }
-        
+        # Use product_persona if available, otherwise use legacy parameters
         prompt_result = prompt_generator.generate_prompt(
             st.session_state.cropped_path,
-            st.session_state.product_description,
-            user_inputs,
+            product_persona=st.session_state.product_persona,
             primary_font=st.session_state.primary_font,
             secondary_font=st.session_state.secondary_font,
             pricing_font=st.session_state.pricing_font,
             include_price=st.session_state.include_price,
-            logo_path=st.session_state.logo_path
+            logo_path=st.session_state.logo_path,
+            promotion_text=st.session_state.promotion_text
         )
         
         if not prompt_result["success"]:
@@ -717,9 +891,9 @@ elif st.session_state.workflow_step == 'generating_prompt':
             st.session_state.workflow_step = 'prompt_input'
             st.rerun()
 
-# Workflow Step 5: Prompt Review
+# Workflow Step 5b: Prompt Review
 elif st.session_state.workflow_step == 'prompt_review':
-    st.markdown("### 📋 Step 3: Review & Edit Prompt")
+    st.markdown("### 📋 Review & Edit Prompt")
     st.markdown("Review and customize the generated text elements for your ad creative.")
     
     st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
@@ -822,16 +996,16 @@ elif st.session_state.workflow_step == 'prompt_review':
                     st.session_state.workflow_step = 'prompt_input'
                     st.rerun()
 
-# Workflow Step 6: Generating Creative
+# Workflow Step 6: Creative Generation (Agent 4)
 elif st.session_state.workflow_step == 'generating_creative':
-    st.markdown("### 🎨 Generating Final Creative")
+    st.markdown("### 🎨 Agent 4: Ad Generator")
     st.markdown("Creating your premium Meta ad creative with AI. This may take a moment...")
     
     st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
     
     progress_bar = st.progress(0)
     status_text = st.empty()
-    status_text.markdown("**🎯 Generating Meta ad creative with Nano Banana...**")
+    status_text.markdown("**🎯 Generating Meta ad creative with Nano Banana Pro/Nano Banana...**")
     progress_bar.progress(50)
     
     try:
@@ -847,12 +1021,18 @@ elif st.session_state.workflow_step == 'generating_creative':
         if st.session_state.pricing_font:
             font_names_to_strip.append(st.session_state.pricing_font)
         
+        # Get product description from persona if available
+        product_description = ""
+        if st.session_state.product_persona:
+            product_description = st.session_state.product_persona.get("user_inputs", {}).get("usp", "")
+        
         creative_result = creative_generator.generate_creative(
             st.session_state.cropped_path,
             st.session_state.prompt,
-            st.session_state.product_description,
+            product_description=product_description,
             logo_path=st.session_state.logo_path,
-            font_names=font_names_to_strip if font_names_to_strip else None
+            font_names=font_names_to_strip if font_names_to_strip else None,
+            include_price=st.session_state.include_price
         )
         
         if not creative_result["success"]:
