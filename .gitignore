@@ -23,11 +23,13 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# examples 
-/example_images/
 
 # Final creatives
 /Final_creatives/
 
 # New data for new version 
 /src/data/
+
+
+# Templates (before example images)
+/templates/
