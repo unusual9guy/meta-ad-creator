@@ -28,3 +28,6 @@ Thumbs.db
 
 # Final creatives
 /Final_creatives/
+
+# New data for new version 
+/src/data/
