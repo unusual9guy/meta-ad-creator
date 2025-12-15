@@ -46,7 +46,9 @@ class PromptGeneratorAgent:
                             pricing_font: Optional[str] = None,
                             include_price: bool = True,
                             logo_path: Optional[str] = None,
-                            promotion_text: Optional[str] = None) -> str:
+                            promotion_text: Optional[str] = None,
+                            before_price: Optional[str] = None,
+                            after_price: Optional[str] = None) -> str:
         """
         Build system prompt with user-provided fonts and options
         
@@ -57,6 +59,8 @@ class PromptGeneratorAgent:
             include_price: Whether to include pricing information
             logo_path: Path to company logo (optional)
             promotion_text: Promotion text (e.g., "30% winter sale") (optional)
+            before_price: Original price text (e.g., "Rs. 2499") (optional)
+            after_price: Discounted/final price text (e.g., "Rs. 1749") (optional)
         """
         
         # Font instructions
@@ -89,30 +93,32 @@ class PromptGeneratorAgent:
 - Ensure text elements don't overlap with logo
 """
         
-        # Price section (conditional) - use string replacement for placeholders
+        # Price section (conditional) - use actual before/after prices if provided
         pricing_font_name = pricing_font or (primary_font or "professional bold font")
         if include_price:
+            before_price_text = (before_price or "[ORIGINAL PRICE]").strip()
+            after_price_text = (after_price or "[DISCOUNTED PRICE]").strip()
             price_section = f'''
             "pricing_display": {{
               "font": "{pricing_font_name}",
-              "style": "Create a CONSOLIDATED PRICING BADGE. Use BOLD weight for clarity. Place in BOTTOM-RIGHT CORNER. Use simple, clean text design - NOT generic template badges. CRITICAL: PERFECT spelling and grammar.",
+              "style": "Create a clean, modern HORIZONTAL PRICE STRIP along the bottom of the ad. The strip should span most of the width with subtle rounded corners. Keep it minimal and premium - no bulky badge or sticker look. Use BOLD weight for clarity.",
               "before_discount": {{
-                "price": "[ORIGINAL PRICE]",
+                "price": "{before_price_text}",
                 "font": "{pricing_font_name}",
-                "style": "Display with strike-through effect. Professional editing and elegant typography."
+                "style": "Display with a subtle strike-through effect on the left side of the strip. Use refined, elegant typography."
               }},
               "after_discount": {{
-                "price": "[DISCOUNTED PRICE]",
+                "price": "{after_price_text}",
                 "font": "{pricing_font_name}",
-                "style": "Display with BOLD weight for clear visibility. Professional editing and sophisticated typography."
+                "style": "Display prominently on the right side of the strip with BOLD weight for clear visibility. Professional, sophisticated typography."
               }},
-              "placement": "BOTTOM-RIGHT CORNER in a consolidated badge."
+              "placement": "BOTTOM EDGE - FULL-WIDTH HORIZONTAL STRIP, aligned center, sitting just above the bottom margin."
             }},
             "limited_time_offer": {{
               "text": "{'[PROMOTION IS ALREADY IN HEADLINE - DO NOT DUPLICATE HERE. Leave this field empty or use generic text like \"Limited Time Offer\" if needed]' if promotion_text else '[GENERATE LIMITED TIME OFFER TEXT]'}",
               "font": "{pricing_font_name}",
-              "style": "INTEGRATE with pricing badge. Use simple, clean text design. Place above price within same container. CRITICAL: PERFECT spelling and grammar.",
-              "placement": "INTEGRATED with pricing badge in bottom-right corner."
+              "style": "If used, integrate this text INSIDE the same horizontal price strip, in smaller type above or beside the prices. Keep it subtle and premium. CRITICAL: PERFECT spelling and grammar.",
+              "placement": "INTEGRATED inside the same bottom horizontal price strip."
             }}'''
         else:
             price_section = '''
@@ -225,11 +231,11 @@ PROFESSIONAL QUALITY STANDARDS:
 {font_instructions_processed}
 
 {logo_instructions}
-
-You must generate a JSON prompt in this EXACT format:
+        
+        You must generate a JSON prompt in this EXACT format:
 {{
-  "ad_type": "Meta ad Creative for the uploaded product",
-  "model_name": "nano banana",
+          "ad_type": "Meta ad Creative for the uploaded product",
+          "model_name": "nano banana",
   "creative_direction": {{
     "background_style": "{selected_background}",
     "layout_approach": "{selected_layout}",
@@ -359,9 +365,9 @@ You must generate a JSON prompt in this EXACT format:
       }}
     }}
   }},
-  "critical_mandates": [
+          "critical_mandates": [
     "**MANDATORY ASPECT RATIO - FIRST PRIORITY:** Generate the image in EXACTLY 1:1 aspect ratio (SQUARE format). Output dimensions MUST be 1080x1080 pixels. Width MUST equal height. Do NOT generate landscape or portrait images. This is a Meta ad creative requirement.",
-    "**Absolute Rule:** Never change, redraw, or redesign the product. Use its real colors, structure, and features only.",
+            "**Absolute Rule:** Never change, redraw, or redesign the product. Use its real colors, structure, and features only.",
     "**Background:** Create solid neutral background (light beige #F5F5DC, light brown #D2B48C, or off-white) OR blurred natural setting with 40-50% depth of field blur. No patterns, textures, or gradients in solid backgrounds.",
     "**Product Positioning:** Position product off-center (60% from left OR 40% from left), at 50% from top, occupying 65% of canvas height. Add subtle shadow: soft, diffused, 5-10px blur, 20% opacity, offset 3-5px downward.",
     "**Typography - CRITICAL FONT USAGE RULE:** The 'font' field in each text element is a TECHNICAL SPECIFICATION telling you which font to USE for rendering. It is NOT text to display. NEVER print font names like 'Tan Pearl', 'Calgary', or 'RoxboroughCF' as visible text in the image. Generate UNIQUE product headlines based on what the product actually is. Example: For a photo frame, use the font to render 'FRAME YOUR STORY' - do NOT display the font name as text.",
@@ -376,10 +382,10 @@ You must generate a JSON prompt in this EXACT format:
 }}
 
 Generate compelling headlines, taglines, feature descriptions, and CTA text based on the product analysis.
-Make it specific, actionable, and tailored for Meta ad creative generation.
-
+        Make it specific, actionable, and tailored for Meta ad creative generation.
+        
 IMPORTANT: The input product image has no background. You must instruct the AI to CREATE a realistic, natural background that complements the product.
-
+        
 TEXT GENERATION REQUIREMENTS:
         - Generate complete, compelling text for ALL text elements
         - Headline: Create a catchy, one-liner headline (2-6 words) that is memorable and impactful
@@ -455,6 +461,8 @@ TEXT GENERATION REQUIREMENTS:
         """
         try:
             # Extract information from product_persona if provided, otherwise use legacy parameters
+            before_price = None
+            after_price = None
             if product_persona:
                 ai_analysis = product_persona.get("ai_analysis", {})
                 user_data = product_persona.get("user_inputs", {})
@@ -464,12 +472,14 @@ TEXT GENERATION REQUIREMENTS:
                 product_name = user_data.get("product_name", "")
                 promotion_data = user_data.get("promotion", {})
                 
-                # Use promotion from persona if available
+                # Use promotion text and pricing from persona if available
                 if promotion_data.get("included", False):
-                    include_price = True
-                    # Use promotion_text if provided, otherwise construct from persona
+                    # Only set promotion_text if user didn't provide one in the UI
                     if not promotion_text and promotion_data.get("percentage"):
                         promotion_text = f"{promotion_data.get('percentage', 0)}% OFF"
+                # Pricing (before/after) is always taken from persona if present
+                before_price = promotion_data.get("before_price") or None
+                after_price = promotion_data.get("after_price") or None
                 
                 # Build comprehensive product context
                 product_context = f"""
@@ -504,7 +514,9 @@ User Inputs: {user_inputs or "None provided"}
                 pricing_font=pricing_font,
                 include_price=include_price,
                 logo_path=logo_path,
-                promotion_text=promotion_text
+                promotion_text=promotion_text,
+                before_price=before_price,
+                after_price=after_price
             )
             
             # Encode image
@@ -534,13 +546,13 @@ User Inputs: {user_inputs or "None provided"}
                         "type": "text",
                         "text": f"""
 {product_context}
-
+                        
 Font Information:
 {font_text}
 {promotion_info}
-
-Please analyze this product image and generate a structured prompt for Google's Nano Banana model.
-The product image has no background, so you must instruct the AI to CREATE a realistic, natural background that complements the product.
+                        
+                        Please analyze this product image and generate a structured prompt for Google's Nano Banana model.
+                        The product image has no background, so you must instruct the AI to CREATE a realistic, natural background that complements the product.
 
 CRITICAL REQUIREMENTS FOR UNIQUE TEXT GENERATION:
 
