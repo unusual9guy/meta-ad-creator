@@ -168,9 +168,32 @@ class PromptGeneratorAgent:
         
         # Build headline instruction text based on whether promotion is included
         if promotion_text:
-            headline_instruction = f'[GENERATE A UNIQUE HEADLINE SPECIFIC TO THIS PRODUCT - Based on the product description, create a compelling headline that: 1) Highlights what makes THIS specific product special, 2) Speaks directly to the target audience\'s desires, 3) Is NOT generic like \'Elegance Unveiled\' or \'Timeless Beauty\' - make it SPECIFIC to this product category and features, 4) Could only work for THIS type of product, 5) **CRITICAL: MUST INCLUDE THE PROMOTION TEXT IN THE HEADLINE** - Integrate the promotion text "{promotion_text}" smoothly and naturally into the headline. **ABSOLUTELY CRITICAL RULES FOR PROMOTION TEXT:** - Use the EXACT, COMPLETE promotion text provided - do NOT abbreviate, truncate, or shorten ANY words - If the text is "30% Winter Sale", you MUST use "30% WINTER SALE" (full text with both words "WINTER" and "SALE" complete), NOT "30% W SALE" or "30% W Sale" or any abbreviation - NEVER abbreviate "Winter" to "W" or "Sale" to "S" - Preserve the complete, full promotion text exactly as provided with ALL words spelled out completely - **DO NOT use pipe symbol "|" as a separator** - Instead, blend the promotion smoothly using: a dash "-", a comma ",", or integrate it naturally at the end - Examples of GOOD integration: "ILLUMINATE WITH GRACE - 30% WINTER SALE" or "ELEVATE YOUR SPACE, 30% WINTER SALE" or "PREMIUM QUALITY 30% WINTER SALE" - Examples of BAD integration: "ELEVATE YOUR SPACE | 30% W SALE" (has pipe and abbreviation) - The promotion should flow naturally with the headline text, not look like a separate element]'
+            promotion_text_verbatim = promotion_text.upper()
+            headline_instruction = (
+                f'[GENERATE A UNIQUE HEADLINE SPECIFIC TO THIS PRODUCT - Based on the product description, create a compelling headline that: '
+                f'1) Highlights what makes THIS specific product special, '
+                f'2) Speaks directly to the target audience\'s desires, '
+                f'3) Is NOT generic like \\\'Elegance Unveiled\\\' or \\\'Timeless Beauty\\\' - make it SPECIFIC to this product category and features, '
+                f'4) Could only work for THIS type of product, '
+                f'5) **CRITICAL: MUST INCLUDE THE PROMOTION TEXT IN THE HEADLINE VERBATIM** - Integrate the promotion text "{promotion_text_verbatim}" smoothly and naturally into the headline. '
+                f'**ABSOLUTELY CRITICAL RULES FOR PROMOTION TEXT:** '
+                f'- Use the EXACT, COMPLETE promotion text provided - do NOT abbreviate, truncate, or shorten ANY words. '
+                f'- If the text is "30% Winter Sale", you MUST use "30% WINTER SALE" (full text with all words) - NEVER "30% W SALE" or any abbreviation. '
+                f'- NEVER abbreviate "Winter" to "W" or "Sale" to "S" - keep every word fully spelled out. '
+                f'- **DO NOT use the pipe symbol "|" as a separator.** '
+                f'- Blend the promotion smoothly using a dash "-", a comma ",", or natural phrasing without separators. '
+                f'Examples of GOOD integration: "ILLUMINATE WITH GRACE - 30% WINTER SALE" or "ELEVATE YOUR SPACE, 30% WINTER SALE" or "PREMIUM QUALITY 30% WINTER SALE". '
+                f'Examples of BAD integration: "ELEVATE YOUR SPACE | 30% W SALE" (pipe + abbreviation - NOT allowed). '
+                f'The promotion must flow naturally within the headline text and must be fully spelled out with ALL words intact.]'
+            )
         else:
-            headline_instruction = '[GENERATE A UNIQUE HEADLINE SPECIFIC TO THIS PRODUCT - Based on the product description, create a 2-6 word headline that: 1) Highlights what makes THIS specific product special, 2) Speaks directly to the target audience\'s desires, 3) Is NOT generic like \'Elegance Unveiled\' or \'Timeless Beauty\' - make it SPECIFIC to this product category and features, 4) Could only work for THIS type of product]'
+            headline_instruction = (
+                '[GENERATE A UNIQUE HEADLINE SPECIFIC TO THIS PRODUCT - Based on the product description, create a 2-6 word headline that: '
+                '1) Highlights what makes THIS specific product special, '
+                '2) Speaks directly to the target audience\'s desires, '
+                '3) Is NOT generic like \'Elegance Unveiled\' or \'Timeless Beauty\' - make it SPECIFIC to this product category and features, '
+                '4) Could only work for THIS type of product]'
+            )
         
         system_prompt = f"""You are an expert creative director at a top advertising agency.
 Your task is to create a structured JSON prompt for generating PREMIUM Meta ad creatives.
@@ -533,13 +556,13 @@ CRITICAL REQUIREMENTS FOR UNIQUE TEXT GENERATION:
                         {f'**CRITICAL - PROMOTION IN HEADLINE:**' if promotion_text else ''}
                         {f'- The promotion text "{promotion_text}" MUST be integrated into the headline itself' if promotion_text else ''}
                         {f'- **ABSOLUTELY CRITICAL: Preserve the promotion text EXACTLY as provided - do NOT abbreviate, truncate, or shorten ANY words**' if promotion_text else ''}
-                        {f'- If the promotion text is "30% Winter Sale", you MUST display it as "30% WINTER SALE" (with BOTH words "WINTER" and "SALE" complete), NOT "30% W SALE" or "30% W Sale" or any abbreviation' if promotion_text else ''}
-                        {f'- NEVER abbreviate "Winter" to "W" or "Sale" to "S" - always use the complete, full words' if promotion_text else ''}
+                        {f'- If the promotion text is "30% Winter Sale", you MUST display it as "30% WINTER SALE" (with ALL words complete), NOT "30% W SALE" or "30% W Sale" or any abbreviation' if promotion_text else ''}
+                        {f'- NEVER abbreviate "Winter" to "W" or "Sale" to "S" - always use fully spelled-out words' if promotion_text else ''}
                         {f'- **DO NOT use pipe symbol "|" as a separator** - it looks unprofessional' if promotion_text else ''}
-                        {f'- Instead, blend the promotion smoothly using: a dash "-", a comma ",", or integrate it naturally at the end without separators' if promotion_text else ''}
+                        {f'- Instead, blend the promotion smoothly using: a dash "-", a comma ",", or integrate it naturally without separators' if promotion_text else ''}
                         {f'- Examples of GOOD integration: "ILLUMINATE WITH GRACE - 30% WINTER SALE" or "ELEVATE YOUR SPACE, 30% WINTER SALE" or "PREMIUM QUALITY 30% WINTER SALE"' if promotion_text else ''}
-                        {f'- Examples of BAD integration: "ELEVATE YOUR SPACE | 30% W SALE" (has pipe and abbreviation - DO NOT DO THIS)' if promotion_text else ''}
-                        {f'- The promotion should flow naturally with the headline text, blending smoothly without looking like a separate element' if promotion_text else ''}
+                        {f'- Examples of BAD integration: "ELEVATE YOUR SPACE | 30% W SALE" (pipe + abbreviation - DO NOT DO THIS)' if promotion_text else ''}
+                        {f'- The promotion should flow naturally with the headline text and must be fully spelled out with ALL words intact' if promotion_text else ''}
                         {f'- Do NOT put the promotion in a separate element - it must be in the headline text field' if promotion_text else ''}
 
 **TAGLINE MUST SPEAK TO THE TARGET AUDIENCE:**
@@ -597,6 +620,10 @@ CRITICAL JSON FORMATTING:
             
             # Post-process to remove font names from text fields
             prompt_text = self._remove_font_names_from_text(prompt_text, primary_font, secondary_font, pricing_font)
+
+            # Post-process to enforce full promotion text (prevent abbreviation like "W SALE")
+            if promotion_text:
+                prompt_text = self._enforce_full_promotion_text(prompt_text, promotion_text)
             
             # Extract structured information
             structured_prompt = self._parse_prompt(prompt_text)
@@ -732,6 +759,44 @@ CRITICAL JSON FORMATTING:
                 replacement = '"text": "PRODUCT HEADLINE"'
                 cleaned = re.sub(pattern, replacement, cleaned, flags=re.IGNORECASE)
             return cleaned
+
+    def _enforce_full_promotion_text(self, prompt_text: str, promotion_text: str) -> str:
+        """
+        Ensure the promotion text is used verbatim (no abbreviations like "W SALE").
+        If any partial/abbreviated form is detected, replace it with the full promotion text.
+        """
+        try:
+            full_text = promotion_text.strip()
+            if not full_text:
+                return prompt_text
+
+            # Normalize to uppercase for matching
+            full_upper = full_text.upper()
+
+            # Common bad patterns: "W SALE", "W SALE.", "W SALE\"", "W SALE'", etc.
+            bad_patterns = [
+                r'\bW\s+SALE\b',
+                r'\bW\s+SALE\b[\.!",\']?'
+            ]
+
+            cleaned = prompt_text
+
+            # Direct substitution of bad patterns with full text
+            for pat in bad_patterns:
+                cleaned = re.sub(pat, full_upper, cleaned, flags=re.IGNORECASE)
+
+            # If truncated after the percent (e.g., "30% W SALE"), replace the whole clause with full text
+            cleaned = re.sub(r'\b\d+%\s+W\s+SALE\b', full_upper, cleaned, flags=re.IGNORECASE)
+
+            # Replace any occurrence of the promotion text but abbreviated (heuristic): "% W " or "%W "
+            cleaned = re.sub(r'\b(\d+%)\s*W\s*SALE\b', lambda m: f"{m.group(1)} {full_upper.split(' ', 1)[-1] if ' ' in full_upper else full_upper}", cleaned, flags=re.IGNORECASE)
+
+            # Final pass: if promotion text exists in lowercase/partial, enforce full uppercase verbatim
+            cleaned = cleaned.replace(full_text, full_upper)
+
+            return cleaned
+        except Exception:
+            return prompt_text
     
     def _parse_prompt(self, prompt_text: str) -> Dict[str, str]:
         """Parse the generated prompt into structured components"""
