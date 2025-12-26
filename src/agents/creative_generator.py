@@ -54,20 +54,20 @@ class CreativeGeneratorAgent:
     
     def _strip_font_names_from_prompt(self, prompt: str, additional_fonts: Optional[List[str]] = None, include_price: bool = True) -> str:
         """
-        Remove all font name references from the prompt before sending to Nano Banana.
-        The image generation model interprets font names as text to display,
-        so we need to remove them completely.
+        Clean the prompt while preserving font specifications.
+        Only removes font names from text content fields, NOT from font specification fields.
+        This allows the model to use the specified fonts while preventing font names from appearing as text.
         """
         cleaned_prompt = prompt
         
-        # Add any additional fonts to strip
-        fonts_to_remove = self.font_names_to_strip.copy()
+        # Add any additional fonts to check for in text content
+        fonts_to_check = self.font_names_to_strip.copy()
         if additional_fonts:
-            fonts_to_remove.extend(additional_fonts)
+            fonts_to_check.extend(additional_fonts)
         
         # Remove duplicates and sort by length (longest first to avoid partial matches)
-        fonts_to_remove = list(set(fonts_to_remove))
-        fonts_to_remove.sort(key=len, reverse=True)
+        fonts_to_check = list(set(fonts_to_check))
+        fonts_to_check.sort(key=len, reverse=True)
         
         # Try to parse as JSON and clean it
         try:
@@ -87,79 +87,60 @@ class CreativeGeneratorAgent:
             
             if json_start != -1 and json_end != -1:
                 json_str = json_prompt[json_start:json_end+1]
+                prefix = json_prompt[:json_start]
+                suffix = json_prompt[json_end+1:]
                 
                 # Parse JSON
                 prompt_json = json.loads(json_str)
                 
-                # Remove font-related fields and clean text fields
-                def clean_json_object(obj):
+                # Clean text fields ONLY - preserve font specification fields
+                def clean_text_fields_only(obj):
                     if isinstance(obj, dict):
-                        # Remove font-related keys entirely
-                        keys_to_remove = []
-                        for key in obj:
-                            if key in ['font', 'font_instruction', 'warning']:
-                                keys_to_remove.append(key)
-                        for key in keys_to_remove:
-                            del obj[key]
-                        
-                        # Remove pricing elements if include_price is False
-                        if not include_price:
-                            if 'pricing_display' in obj:
-                                del obj['pricing_display']
-                            if 'limited_time_offer' in obj:
-                                del obj['limited_time_offer']
-                            # Also check in typography_and_layout
-                            if 'typography_and_layout' in obj and isinstance(obj['typography_and_layout'], dict):
-                                if 'pricing_display' in obj['typography_and_layout']:
-                                    del obj['typography_and_layout']['pricing_display']
-                                if 'limited_time_offer' in obj['typography_and_layout']:
-                                    del obj['typography_and_layout']['limited_time_offer']
-                        
-                        # Clean text fields
+                        # DO NOT remove font, font_instruction, or warning fields - these are specifications
+                        # Only clean text content fields
                         for key, value in obj.items():
                             if key == "text" and isinstance(value, str):
-                                # Remove font names from text content
-                                for font_name in fonts_to_remove:
-                                    # Case-insensitive replacement
+                                # Remove font names from text content only
+                                for font_name in fonts_to_check:
+                                    # Case-insensitive replacement in text content
                                     pattern = re.compile(re.escape(font_name), re.IGNORECASE)
                                     value = pattern.sub("", value)
                                 # Clean up extra spaces
                                 value = re.sub(r'\s+', ' ', value).strip()
                                 obj[key] = value
                             elif isinstance(value, (dict, list)):
-                                clean_json_object(value)
+                                clean_text_fields_only(value)
                     elif isinstance(obj, list):
                         for item in obj:
-                            clean_json_object(item)
+                            clean_text_fields_only(item)
                 
-                clean_json_object(prompt_json)
+                # Remove pricing elements if include_price is False
+                def remove_pricing_elements(obj):
+                    if isinstance(obj, dict):
+                        if not include_price:
+                            if 'pricing_display' in obj:
+                                del obj['pricing_display']
+                            if 'limited_time_offer' in obj:
+                                del obj['limited_time_offer']
+                        for key, value in obj.items():
+                            if isinstance(value, (dict, list)):
+                                remove_pricing_elements(value)
+                    elif isinstance(obj, list):
+                        for item in obj:
+                            remove_pricing_elements(item)
+                
+                # Clean text fields (remove font names from text content)
+                clean_text_fields_only(prompt_json)
+                
+                # Remove pricing if needed
+                remove_pricing_elements(prompt_json)
                 
                 # Convert back to string
-                cleaned_prompt = json.dumps(prompt_json, indent=2)
+                cleaned_prompt = prefix + json.dumps(prompt_json, indent=2) + suffix
         except (json.JSONDecodeError, Exception):
-            # If JSON parsing fails, do string-based cleaning
+            # If JSON parsing fails, do minimal string-based cleaning of text content only
+            # Don't remove font specifications
             pass
-        
-        # Also do string-based cleaning as a safety net
-        for font_name in fonts_to_remove:
-            # Remove font name references in various formats
-            patterns = [
-                # "font": "FontName"
-                rf'"font"\s*:\s*["\']?{re.escape(font_name)}["\']?\s*,?',
-                # "font_instruction": "..."
-                rf'"font_instruction"\s*:\s*"[^"]*"\s*,?',
-                # "warning": "..."
-                rf'"warning"\s*:\s*"[^"]*"\s*,?',
-                # Standalone font name (case insensitive)
-                rf'\b{re.escape(font_name)}\b',
-            ]
-            for pattern in patterns:
-                cleaned_prompt = re.sub(pattern, '', cleaned_prompt, flags=re.IGNORECASE)
-        
-        # Clean up any double commas, trailing commas before brackets
-        cleaned_prompt = re.sub(r',\s*,', ',', cleaned_prompt)
-        cleaned_prompt = re.sub(r',\s*([}\]])', r'\1', cleaned_prompt)
-        cleaned_prompt = re.sub(r'([{[,])\s*,', r'\1', cleaned_prompt)
         
         # Add explicit instructions for image generation with variety
         import random
@@ -233,9 +214,14 @@ CRITICAL INSTRUCTIONS FOR IMAGE GENERATION:
    - Lighting should be soft, directional, and create depth
    - Shadows should be realistic and grounded
 
-4. FONT NAMES: DO NOT display any font names as text in the generated image.
-   - All text should be actual product copy (headlines, taglines, prices, features)
-   - Never render font names as visible text
+4. FONT USAGE - CRITICAL:
+   - The "font" field in the JSON is a TECHNICAL SPECIFICATION telling you which font to USE for rendering
+   - You MUST use the exact font specified in each "font" field to render the corresponding text
+   - The font name in the "font" field is NOT text to display - it's a specification of which font to use
+   - NEVER display font names (like "Playfair Display", "Calgary", "Montserrat", etc.) as visible text in the image
+   - Use the specified fonts to render the actual product text (headlines, taglines, etc.)
+   - Example: If font is "Playfair Display" and text is "ELEGANT DINING", use Playfair Display font to render "ELEGANT DINING" - do NOT display "Playfair Display" as text
+   - All displayed text should be actual product copy, NOT font names
 
 5. PROMOTION TEXT: If a promotion text is included in the headline, preserve it EXACTLY as written.
    - Do NOT abbreviate, truncate, or shorten ANY words in the promotion text
@@ -303,17 +289,16 @@ CRITICAL INSTRUCTIONS FOR IMAGE GENERATION:
                 logo_image = Image.open(logo_path)
                 contents.append(logo_image)
             
-            # Try Nano Banana Pro first, fallback to Nano Banana
-            model_name = "gemini-2.5-flash-image-preview"
+            # Try Gemini 3 Pro first, fallback to Gemini 2.5 Flash
+            model_name = "models/gemini-3-pro-image-preview"
             try:
-                # Try Pro version first
+                # Try Gemini 3 Pro first
                 response = self.client.models.generate_content(
-                    model="gemini-2.5-flash-image-preview-pro",
+                    model="models/gemini-3-pro-image-preview",
                     contents=contents,
                 )
-                model_name = "gemini-2.5-flash-image-preview-pro"
             except Exception as pro_error:
-                # Fallback to regular Nano Banana
+                # Fallback to Gemini 2.5 Flash
                 try:
                     response = self.client.models.generate_content(
                         model="gemini-2.5-flash-image-preview",

@@ -240,3 +240,4 @@ Format your response as a structured analysis that can be used for advertising p
         
         return persona
 
+
