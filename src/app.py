@@ -321,12 +321,6 @@ if 'workflow_step' not in st.session_state:
     st.session_state.workflow_step = 'upload'
 if 'logo_path' not in st.session_state:
     st.session_state.logo_path = None
-if 'primary_font' not in st.session_state:
-    st.session_state.primary_font = None
-if 'secondary_font' not in st.session_state:
-    st.session_state.secondary_font = None
-if 'pricing_font' not in st.session_state:
-    st.session_state.pricing_font = None
 if 'include_price' not in st.session_state:
     st.session_state.include_price = False
 if 'promotion_text' not in st.session_state:
@@ -342,9 +336,6 @@ def reset_workflow():
     st.session_state.prompt = None
     st.session_state.final_creative_path = None
     st.session_state.logo_path = None
-    st.session_state.primary_font = None
-    st.session_state.secondary_font = None
-    st.session_state.pricing_font = None
     st.session_state.include_price = False
     st.session_state.promotion_text = None
 
@@ -593,9 +584,9 @@ elif st.session_state.workflow_step == 'product_analysis':
                     )
                     
                     st.session_state.product_persona = product_persona
-                    st.session_state.workflow_step = 'processing'
-                    st.rerun()
-        
+                st.session_state.workflow_step = 'processing'
+                st.rerun()
+
         st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
@@ -783,21 +774,21 @@ elif st.session_state.workflow_step == 'prompt_input':
         include_price = False
         
         st.markdown("---")
-        st.markdown("**🎨 Typography Settings**")
+        st.markdown("**🎨 Typography**")
         
-        primary_font = st.text_input(
-            "📝 Primary Font (Required)",
-            placeholder="e.g., Playfair Display, Calgary, Montserrat",
-            help="Enter the exact font name you want to use for headlines and main text"
-        )
-        
-        secondary_font = st.text_input(
-            "📝 Secondary Font (Optional)",
-            placeholder="e.g., Lato, Roboto, Tan Pearl",
-            help="Enter font name for taglines and secondary text (leave empty to use primary font)"
-        )
-        
-        pricing_font = ""
+        # Display detected font styles from product analysis
+        if st.session_state.product_persona:
+            font_styles = st.session_state.product_persona.get("ai_analysis", {}).get("font_styles", {})
+            product_style = st.session_state.product_persona.get("ai_analysis", {}).get("style", "")
+            
+            if font_styles:
+                st.success(f"✨ **AI-Selected Typography** based on product style: *{product_style or 'Professional'}*")
+                with st.expander("📝 View Font Style Details", expanded=False):
+                    st.markdown(f"**Headline:** {font_styles.get('headline', 'Professional serif')[:100]}...")
+                    st.markdown(f"**Tagline:** {font_styles.get('tagline', 'Clean sans-serif')[:100]}...")
+                    st.markdown(f"**CTA Button:** {font_styles.get('cta', 'Medium-weight sans-serif')[:80]}...")
+        else:
+            st.info("🎨 Font styles will be automatically selected based on your product's aesthetic")
         
         st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
         
@@ -808,16 +799,10 @@ elif st.session_state.workflow_step == 'prompt_input':
         submitted = st.form_submit_button("🚀 Generate Prompt", width='stretch', type="primary")
         
         if submitted:
-            if not primary_font:
-                st.warning("⚠️ Please provide a primary font name")
-            else:
-                # Ensure price tag is disabled for now
-                st.session_state.workflow_step = 'generating_prompt'
-                st.session_state.primary_font = primary_font
-                st.session_state.secondary_font = secondary_font if secondary_font else None
-                st.session_state.pricing_font = None
-                st.session_state.include_price = False
-                st.rerun()
+            # Font styles are auto-detected from product analysis
+            st.session_state.workflow_step = 'generating_prompt'
+            st.session_state.include_price = False
+            st.rerun()
     
     st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -842,13 +827,10 @@ elif st.session_state.workflow_step == 'generating_prompt':
         # Agent will automatically use GOOGLE_API_KEY_PROMPT or fall back to GOOGLE_API_KEY
         prompt_generator = PromptGeneratorAgent()
         
-        # Use product_persona if available, otherwise use legacy parameters
+        # Use product_persona - font styles are automatically detected from product analysis
         prompt_result = prompt_generator.generate_prompt(
             st.session_state.cropped_path,
             product_persona=st.session_state.product_persona,
-            primary_font=st.session_state.primary_font,
-            secondary_font=st.session_state.secondary_font,
-            pricing_font=st.session_state.pricing_font,
             include_price=st.session_state.include_price,
             logo_path=st.session_state.logo_path,
             promotion_text=st.session_state.promotion_text
@@ -1002,26 +984,18 @@ elif st.session_state.workflow_step == 'generating_creative':
         # Agent will automatically use GOOGLE_API_KEY_CREATIVE or fall back to GOOGLE_API_KEY
         creative_generator = CreativeGeneratorAgent()
         
-        # Collect font names to strip from prompt
-        font_names_to_strip = []
-        if st.session_state.primary_font:
-            font_names_to_strip.append(st.session_state.primary_font)
-        if st.session_state.secondary_font:
-            font_names_to_strip.append(st.session_state.secondary_font)
-        if st.session_state.pricing_font:
-            font_names_to_strip.append(st.session_state.pricing_font)
-        
         # Get product description from persona if available
         product_description = ""
         if st.session_state.product_persona:
             product_description = st.session_state.product_persona.get("user_inputs", {}).get("usp", "")
         
+        # Font styles are now descriptive (not specific names), so no stripping needed
         creative_result = creative_generator.generate_creative(
             st.session_state.cropped_path,
             st.session_state.prompt,
             product_description=product_description,
             logo_path=st.session_state.logo_path,
-            font_names=font_names_to_strip if font_names_to_strip else None,
+            font_names=None,  # No specific font names to strip - using descriptive styles
             include_price=st.session_state.include_price
         )
         

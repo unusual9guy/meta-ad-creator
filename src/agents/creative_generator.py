@@ -46,7 +46,7 @@ class CreativeGeneratorAgent:
             raise ValueError("Google API key is required. Set GOOGLE_API_KEY_CREATIVE or GOOGLE_API_KEY environment variable.")
         
         self.client = genai.Client(api_key=self.api_key)
-        
+    
         # Combine common font names with any custom ones provided
         self.font_names_to_strip = COMMON_FONT_NAMES.copy()
         if custom_font_names:

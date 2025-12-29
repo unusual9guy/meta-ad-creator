@@ -41,21 +41,17 @@ class PromptGeneratorAgent:
             max_tokens=3000  # Increased to prevent JSON truncation
         )
     
-    def _build_system_prompt(self, primary_font: Optional[str] = None, 
-                            secondary_font: Optional[str] = None,
-                            pricing_font: Optional[str] = None,
+    def _build_system_prompt(self, font_styles: Optional[Dict[str, str]] = None,
                             include_price: bool = True,
                             logo_path: Optional[str] = None,
                             promotion_text: Optional[str] = None,
                             before_price: Optional[str] = None,
                             after_price: Optional[str] = None) -> str:
         """
-        Build system prompt with user-provided fonts and options
+        Build system prompt with auto-detected font styles and options
         
         Args:
-            primary_font: User-provided primary font name
-            secondary_font: User-provided secondary font name (optional)
-            pricing_font: User-provided pricing font name (optional)
+            font_styles: Dictionary with font style descriptions for headline, tagline, cta, price
             include_price: Whether to include pricing information
             logo_path: Path to company logo (optional)
             promotion_text: Promotion text (e.g., "30% winter sale") (optional)
@@ -63,22 +59,31 @@ class PromptGeneratorAgent:
             after_price: Discounted/final price text (e.g., "Rs. 1749") (optional)
         """
         
-        # Font instructions
-        font_instructions = ""
-        if primary_font:
-            font_instructions += f"PRIMARY FONT: Use EXACTLY the font named '{primary_font}'. Do NOT substitute, modify, or use similar fonts. Use this exact font name only.\n"
-        else:
-            font_instructions += "PRIMARY FONT: Use a clean, professional serif or sans-serif font. Do not use generic or default fonts.\n"
+        # Get font styles or use defaults
+        if not font_styles:
+            font_styles = {
+                "headline": "Professional, well-balanced serif or sans-serif with clear hierarchy",
+                "tagline": "Clean, readable sans-serif with balanced proportions",
+                "cta": "Medium-weight sans-serif, clear and confident",
+                "price": "Clear, modern sans-serif with high legibility"
+            }
         
-        if secondary_font:
-            font_instructions += f"SECONDARY FONT: Use EXACTLY the font named '{secondary_font}'. Do NOT substitute or modify.\n"
-        elif primary_font:
-            font_instructions += f"SECONDARY FONT: Use the same font as primary ({primary_font}) with different weight or size.\n"
+        headline_style = font_styles.get("headline", "Professional serif or sans-serif")
+        tagline_style = font_styles.get("tagline", "Clean, readable sans-serif")
+        cta_style = font_styles.get("cta", "Medium-weight sans-serif")
+        price_style = font_styles.get("price", "Clear, modern sans-serif")
         
-        if include_price and pricing_font:
-            font_instructions += f"PRICING FONT: Use EXACTLY the font named '{pricing_font}'. Do NOT substitute or modify.\n"
-        elif include_price and primary_font:
-            font_instructions += f"PRICING FONT: Use the same font as primary ({primary_font}) in bold weight.\n"
+        # Font instructions using descriptive styles (not specific font names)
+        font_instructions = f"""
+**TYPOGRAPHY SPECIFICATIONS - CRITICAL:**
+Use typography that matches these style descriptions. The AI should render text in fonts that match these characteristics:
+
+- **HEADLINE TYPOGRAPHY:** {headline_style}
+- **TAGLINE TYPOGRAPHY:** {tagline_style}
+- **CTA BUTTON TYPOGRAPHY:** {cta_style}
+"""
+        if include_price:
+            font_instructions += f"- **PRICE TYPOGRAPHY:** {price_style}\n"
         
         # Logo instructions
         logo_instructions = ""
@@ -94,29 +99,28 @@ class PromptGeneratorAgent:
 """
         
         # Price section (conditional) - use actual before/after prices if provided
-        pricing_font_name = pricing_font or (primary_font or "professional bold font")
         if include_price:
             before_price_text = (before_price or "[ORIGINAL PRICE]").strip()
             after_price_text = (after_price or "[DISCOUNTED PRICE]").strip()
             price_section = f'''
             "pricing_display": {{
-              "font": "{pricing_font_name}",
+              "typography_style": "{price_style}",
               "style": "Create a clean, modern HORIZONTAL PRICE STRIP along the bottom of the ad. The strip should span most of the width with subtle rounded corners. Keep it minimal and premium - no bulky badge or sticker look. Use BOLD weight for clarity.",
               "before_discount": {{
                 "price": "{before_price_text}",
-                "font": "{pricing_font_name}",
+                "typography_style": "{price_style}",
                 "style": "Display with a subtle strike-through effect on the left side of the strip. Use refined, elegant typography."
               }},
               "after_discount": {{
                 "price": "{after_price_text}",
-                "font": "{pricing_font_name}",
+                "typography_style": "{price_style}",
                 "style": "Display prominently on the right side of the strip with BOLD weight for clear visibility. Professional, sophisticated typography."
               }},
               "placement": "BOTTOM EDGE - FULL-WIDTH HORIZONTAL STRIP, aligned center, sitting just above the bottom margin."
             }},
             "limited_time_offer": {{
               "text": "{'[PROMOTION IS ALREADY IN HEADLINE - DO NOT DUPLICATE HERE. Leave this field empty or use generic text like \"Limited Time Offer\" if needed]' if promotion_text else '[GENERATE LIMITED TIME OFFER TEXT]'}",
-              "font": "{pricing_font_name}",
+              "typography_style": "{price_style}",
               "style": "If used, integrate this text INSIDE the same horizontal price strip, in smaller type above or beside the prices. Keep it subtle and premium. CRITICAL: PERFECT spelling and grammar.",
               "placement": "INTEGRATED inside the same bottom horizontal price strip."
             }}'''
@@ -125,10 +129,8 @@ class PromptGeneratorAgent:
             "pricing_display": null,
             "limited_time_offer": null'''
         
-        # Replace placeholders in font instructions
-        font_instructions_processed = font_instructions.replace("[PRIMARY_FONT]", primary_font or "professional serif or sans-serif")
-        font_instructions_processed = font_instructions_processed.replace("[SECONDARY_FONT]", secondary_font or (primary_font or "same as primary"))
-        font_instructions_processed = font_instructions_processed.replace("[PRICING_FONT]", pricing_font or (primary_font or "professional bold font"))
+        # Font instructions are already complete, no placeholders to replace
+        font_instructions_processed = font_instructions
         
         # Add randomization for variety in each generation
         background_options = [
@@ -220,7 +222,7 @@ PROFESSIONAL QUALITY STANDARDS:
 - Shadows should be soft, realistic, and grounded (not floating)
 - Lighting should feel natural yet cinematic
 - AVOID: Template looks, clipart feel, generic stock photo aesthetic, busy designs
-- PERFECT spelling and grammar - NO spelling mistakes allowed
+        - PERFECT spelling and grammar - NO spelling mistakes allowed
 
 **ABSOLUTELY CRITICAL - FONT USAGE:**
 - The "font" field in JSON is a TECHNICAL SPECIFICATION for which font to USE, NOT text to DISPLAY
@@ -267,7 +269,7 @@ PROFESSIONAL QUALITY STANDARDS:
       {{
         "type": "text",
         "text": "{headline_instruction}",
-        "font": "{primary_font or 'professional serif or sans-serif'}",
+        "typography_style": "{headline_style}",
         "headline_examples_by_category": {{
           "home_decor": ["ARTISAN CRAFTED", "HOME REIMAGINED", "CURATED LIVING", "HANDMADE HERITAGE"],
           "kitchenware": ["KITCHEN ELEVATED", "CULINARY CRAFT", "COOK WITH SOUL", "TASTE PERFECTED"],
@@ -293,7 +295,7 @@ PROFESSIONAL QUALITY STANDARDS:
       {{
         "type": "text",
         "text": "[GENERATE A UNIQUE TAGLINE SPECIFIC TO THIS PRODUCT AND TARGET AUDIENCE - Create a tagline that: 1) Directly addresses the target audience's pain point or aspiration, 2) Mentions or implies the product's key benefit, 3) Feels personal and specific, NOT generic marketing speak, 4) Would make the target audience think 'this is for me']",
-        "font": "{secondary_font or primary_font or 'professional serif or sans-serif'}",
+        "typography_style": "{tagline_style}",
         "tagline_examples_by_audience": {{
           "home_decor_enthusiasts": ["Transform your space, express your soul", "Where design meets your story", "Your home, your masterpiece"],
           "luxury_buyers": ["For those who appreciate the finer things", "Crafted for the discerning eye", "Excellence you can see and feel"],
@@ -335,6 +337,7 @@ PROFESSIONAL QUALITY STANDARDS:
       {{
         "type": "cta_button",
         "text": "[GENERATE CTA TEXT - e.g., 'SHOP NOW', 'Shop The Collection']",
+        "typography_style": "{cta_style}",
         "placement": {{
           "position": "bottom-center",
           "y_offset": {120 if include_price else 80}
@@ -345,7 +348,7 @@ PROFESSIONAL QUALITY STANDARDS:
           "border_radius": 8,
           "padding": "12px 32px"
         }},
-        "instruction": "Place the CTA button BELOW the product with sufficient spacing. Ensure it does NOT overlap with the product. Position it at least 80-120px from the bottom edge, depending on whether pricing is included. The button should be clearly separated from the product."
+        "instruction": "Place the CTA button BELOW the product with sufficient spacing. Ensure it does NOT overlap with the product. Position it at least 80-120px from the bottom edge, depending on whether pricing is included. The button should be clearly separated from the product. Use the specified typography style for the button text."
       }}
     ],
 {price_section}
@@ -435,23 +438,17 @@ TEXT GENERATION REQUIREMENTS:
                        product_persona: Optional[Dict[str, Any]] = None,
                        description: Optional[str] = None,
                        user_inputs: Optional[Dict[str, Any]] = None,
-                       primary_font: Optional[str] = None,
-                       secondary_font: Optional[str] = None,
-                       pricing_font: Optional[str] = None,
                        include_price: bool = True,
                        logo_path: Optional[str] = None,
                        promotion_text: Optional[str] = None) -> Dict[str, Any]:
         """
-        Generate structured prompt based on product persona or legacy parameters
+        Generate structured prompt based on product persona
         
         Args:
             image_path: Path to the product image
-            product_persona: Structured product persona from Agent 1 (preferred)
+            product_persona: Structured product persona from Agent 1 (includes auto-detected font styles)
             description: Product description (legacy, used if product_persona not provided)
             user_inputs: Optional user inputs (legacy, used if product_persona not provided)
-            primary_font: User-provided primary font name
-            secondary_font: User-provided secondary font name (optional)
-            pricing_font: User-provided pricing font name (optional)
             include_price: Whether to include pricing information
             logo_path: Path to company logo (optional)
             promotion_text: Promotion text (e.g., "30% winter sale") (optional)
@@ -481,6 +478,9 @@ TEXT GENERATION REQUIREMENTS:
                 before_price = promotion_data.get("before_price") or None
                 after_price = promotion_data.get("after_price") or None
                 
+                # Extract font styles from AI analysis
+                font_styles = ai_analysis.get('font_styles', None)
+                
                 # Build comprehensive product context
                 product_context = f"""
 PRODUCT ANALYSIS (from AI):
@@ -497,6 +497,7 @@ USER PROVIDED INFORMATION:
 - Additional Comments: {user_data.get('additional_comments', 'None')}
 """
             else:
+                font_styles = None  # Will use defaults
                 # Legacy mode: use description and user_inputs
                 product_description = description or ""
                 target_audience = user_inputs.get('target_audience', 'general') if user_inputs else 'general'
@@ -507,11 +508,9 @@ Target Audience: {target_audience}
 User Inputs: {user_inputs or "None provided"}
 """
             
-            # Build system prompt with user options
+            # Build system prompt with auto-detected font styles
             system_prompt = self._build_system_prompt(
-                primary_font=primary_font,
-                secondary_font=secondary_font,
-                pricing_font=pricing_font,
+                font_styles=font_styles,
                 include_price=include_price,
                 logo_path=logo_path,
                 promotion_text=promotion_text,
@@ -522,16 +521,15 @@ User Inputs: {user_inputs or "None provided"}
             # Encode image
             base64_image = self.encode_image(image_path)
             
-            # Prepare user message with font information
-            font_info = []
-            if primary_font:
-                font_info.append(f"Primary Font: {primary_font}")
-            if secondary_font:
-                font_info.append(f"Secondary Font: {secondary_font}")
-            if include_price and pricing_font:
-                font_info.append(f"Pricing Font: {pricing_font}")
-            
-            font_text = "\n".join(font_info) if font_info else "No specific fonts provided - use professional fonts"
+            # Prepare user message with font style information
+            if font_styles:
+                font_text = f"""Typography Styles (auto-detected based on product style):
+- Headline: {font_styles.get('headline', 'Professional serif')[:80]}...
+- Tagline: {font_styles.get('tagline', 'Clean sans-serif')[:80]}...
+- CTA: {font_styles.get('cta', 'Medium-weight sans-serif')[:80]}...
+- Price: {font_styles.get('price', 'Clear sans-serif')[:80]}..."""
+            else:
+                font_text = "Typography: Use professional, balanced typography appropriate for premium product advertising"
             
             # Prepare promotion information
             promotion_info = ""
@@ -629,9 +627,6 @@ CRITICAL JSON FORMATTING:
             
             # Parse and structure the response
             prompt_text = response.content
-            
-            # Post-process to remove font names from text fields
-            prompt_text = self._remove_font_names_from_text(prompt_text, primary_font, secondary_font, pricing_font)
 
             # Post-process to enforce full promotion text (prevent abbreviation like "W SALE")
             if promotion_text:
@@ -649,9 +644,7 @@ CRITICAL JSON FORMATTING:
                     "product_persona": product_persona,
                     "description": description,
                     "user_inputs": user_inputs,
-                    "primary_font": primary_font,
-                    "secondary_font": secondary_font,
-                    "pricing_font": pricing_font,
+                    "font_styles": font_styles,
                     "include_price": include_price,
                     "logo_path": logo_path,
                     "promotion_text": promotion_text
@@ -672,106 +665,6 @@ CRITICAL JSON FORMATTING:
                 }
             }
     
-    def _remove_font_names_from_text(self, prompt_text: str, primary_font: Optional[str], 
-                                     secondary_font: Optional[str], 
-                                     pricing_font: Optional[str]) -> str:
-        """
-        Post-process the generated prompt to remove font names from text fields.
-        This prevents font names from appearing as displayed text in the final image.
-        """
-        # Collect all font names to check for
-        font_names = []
-        if primary_font:
-            font_names.append(primary_font)
-        if secondary_font:
-            font_names.append(secondary_font)
-        if pricing_font:
-            font_names.append(pricing_font)
-        
-        if not font_names:
-            return prompt_text
-        
-        # Try to parse JSON and clean it
-        try:
-            # Clean markdown code blocks
-            clean_prompt = prompt_text
-            if clean_prompt.startswith('```json'):
-                clean_prompt = clean_prompt[7:]
-            elif clean_prompt.startswith('```'):
-                clean_prompt = clean_prompt[3:]
-            if clean_prompt.endswith('```'):
-                clean_prompt = clean_prompt[:-3]
-            clean_prompt = clean_prompt.strip()
-            
-            # Find JSON object
-            json_start = clean_prompt.find('{')
-            json_end = clean_prompt.rfind('}')
-            
-            if json_start != -1 and json_end != -1:
-                json_str = clean_prompt[json_start:json_end+1]
-                prefix = clean_prompt[:json_start]
-                suffix = clean_prompt[json_end+1:]
-                
-                # Parse JSON
-                prompt_json = json.loads(json_str)
-                
-                # Function to recursively clean text fields
-                def clean_text_fields(obj, font_names_list):
-                    if isinstance(obj, dict):
-                        for key, value in obj.items():
-                            if key == "text" and isinstance(value, str):
-                                # Check if text contains any font name
-                                for font_name in font_names_list:
-                                    # Case-insensitive check
-                                    if font_name.lower() in value.lower():
-                                        # Replace font name with generic product text
-                                        # Simply remove the font name from the text - don't replace with generic phrases
-                                        # The AI should have generated unique text; we just need to remove any accidental font name inclusion
-                                        value = re.sub(re.escape(font_name), "", value, flags=re.IGNORECASE).strip()
-                                        # Clean up any double spaces left behind
-                                        value = re.sub(r'\s+', ' ', value).strip()
-                                        obj[key] = value
-                            elif key == "items" and isinstance(value, list):
-                                # Handle feature items
-                                for item in value:
-                                    if isinstance(item, dict) and "text" in item:
-                                        for font_name in font_names_list:
-                                            if font_name.lower() in item["text"].lower():
-                                                # Remove font name from feature text
-                                                item["text"] = re.sub(re.escape(font_name), "", item["text"], flags=re.IGNORECASE).strip()
-                            else:
-                                clean_text_fields(value, font_names_list)
-                    elif isinstance(obj, list):
-                        for item in obj:
-                            clean_text_fields(item, font_names_list)
-                
-                # Clean the JSON
-                clean_text_fields(prompt_json, font_names)
-                
-                # Reconstruct the prompt
-                cleaned_json_str = json.dumps(prompt_json, indent=2)
-                return prefix + cleaned_json_str + suffix
-            else:
-                # If JSON parsing fails, do simple string replacement as fallback
-                cleaned = prompt_text
-                for font_name in font_names:
-                    # Only replace if it's clearly being used as text (not in font field)
-                    # This is a heuristic - look for font name in quotes or as standalone text
-                    pattern = rf'["\']\s*{re.escape(font_name)}\s*["\']'
-                    cleaned = re.sub(pattern, '"PRODUCT TEXT"', cleaned, flags=re.IGNORECASE)
-                return cleaned
-                
-        except (json.JSONDecodeError, Exception) as e:
-            # If JSON parsing fails, do simple string replacement as fallback
-            cleaned = prompt_text
-            for font_name in font_names:
-                # Try to replace font names that appear in text fields (heuristic)
-                # Look for patterns like "text": "Tan Pearl" or similar
-                pattern = rf'"text"\s*:\s*["\']\s*{re.escape(font_name)}\s*["\']'
-                replacement = '"text": "PRODUCT HEADLINE"'
-                cleaned = re.sub(pattern, replacement, cleaned, flags=re.IGNORECASE)
-            return cleaned
-
     def _enforce_full_promotion_text(self, prompt_text: str, promotion_text: str) -> str:
         """
         Ensure the promotion text is used verbatim (no abbreviations like "W SALE").

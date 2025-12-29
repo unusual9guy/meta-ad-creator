@@ -139,7 +139,8 @@ Format your response as a structured analysis that can be used for advertising p
             "features": [],
             "style": "",
             "suggested_use_cases": [],
-            "target_market_indicators": ""
+            "target_market_indicators": "",
+            "font_styles": {}  # Will be populated by determine_font_styles()
         }
         
         # Try to extract structured information from the text
@@ -196,7 +197,85 @@ Format your response as a structured analysis that can be used for advertising p
         structured["features"] = [f for f in structured["features"] if f]
         structured["suggested_use_cases"] = [uc for uc in structured["suggested_use_cases"] if uc]
         
+        # Determine font styles based on product style
+        structured["font_styles"] = self._determine_font_styles(structured["style"], structured["materials"])
+        
         return structured
+    
+    def _determine_font_styles(self, style: str, materials: list) -> Dict[str, str]:
+        """
+        Determine appropriate font styles based on product style and materials.
+        Returns descriptive font characteristics that AI image generators can understand.
+        
+        Args:
+            style: Product style/aesthetic (e.g., "luxury", "modern", "rustic")
+            materials: List of materials used in the product
+        
+        Returns:
+            Dictionary with font style descriptions for each text element
+        """
+        style_lower = style.lower() if style else ""
+        materials_lower = " ".join(materials).lower() if materials else ""
+        
+        # Default font styles
+        font_styles = {
+            "headline": "",
+            "tagline": "",
+            "cta": "",
+            "price": ""
+        }
+        
+        # Luxury/Premium/Elegant products
+        if any(kw in style_lower for kw in ["luxury", "premium", "elegant", "sophisticated", "high-end", "upscale"]):
+            font_styles["headline"] = "Elegant high-contrast serif typeface with refined thin-to-thick stroke variation, reminiscent of luxury fashion magazines like Vogue or Harper's Bazaar. Think Didot, Bodoni, or similar editorial elegance with commanding presence."
+            font_styles["tagline"] = "Light-weight sophisticated sans-serif with generous letter-spacing and refined proportions. Subtle, understated elegance that complements without competing."
+            font_styles["cta"] = "Clean, confident medium-weight sans-serif with balanced proportions. Professional and inviting without being aggressive."
+            font_styles["price"] = "Clear, modern sans-serif with medium-bold weight. Highly legible with confident, trustworthy appearance."
+        
+        # Modern/Minimalist products
+        elif any(kw in style_lower for kw in ["modern", "minimalist", "contemporary", "sleek", "clean"]):
+            font_styles["headline"] = "Clean geometric sans-serif with even stroke widths and precise letterforms. Modern, confident, and uncluttered like Swiss design principles. Think Helvetica, Futura, or Avenir aesthetic."
+            font_styles["tagline"] = "Light-weight geometric sans-serif with open letterforms and excellent readability. Minimal and refined."
+            font_styles["cta"] = "Medium-weight geometric sans-serif with clear, confident letterforms. Simple and direct."
+            font_styles["price"] = "Clean, modern sans-serif with medium weight. Precise and professional."
+        
+        # Rustic/Artisan/Handcrafted products
+        elif any(kw in style_lower for kw in ["rustic", "artisan", "handcrafted", "handmade", "vintage", "traditional"]) or \
+             any(kw in materials_lower for kw in ["wood", "leather", "ceramic", "clay", "natural"]):
+            font_styles["headline"] = "Warm, organic serif typeface with subtle hand-crafted character and authentic feel. Traditional proportions with gentle curves, evoking craftsmanship and heritage. Think Garamond, Caslon, or artisanal book typography."
+            font_styles["tagline"] = "Friendly, approachable sans-serif with warm personality and natural feel. Readable and welcoming."
+            font_styles["cta"] = "Warm, rounded sans-serif with friendly character. Inviting and approachable."
+            font_styles["price"] = "Clear, readable serif or sans-serif with warm, trustworthy character."
+        
+        # Bold/Contemporary/Edgy products
+        elif any(kw in style_lower for kw in ["bold", "edgy", "urban", "industrial", "strong"]):
+            font_styles["headline"] = "Bold, impactful sans-serif with strong presence and confident weight. Striking and memorable with powerful visual impact. Think Montserrat Bold, Oswald, or Impact-style typography."
+            font_styles["tagline"] = "Medium-weight condensed sans-serif with strong, confident character. Direct and purposeful."
+            font_styles["cta"] = "Bold, confident sans-serif with strong visual weight. Action-oriented and commanding."
+            font_styles["price"] = "Bold, clear sans-serif with high contrast for immediate readability."
+        
+        # Playful/Fun/Casual products
+        elif any(kw in style_lower for kw in ["playful", "fun", "casual", "friendly", "cheerful", "whimsical"]):
+            font_styles["headline"] = "Rounded, friendly display typeface with warm, approachable character. Playful proportions with gentle curves that convey joy and accessibility."
+            font_styles["tagline"] = "Friendly rounded sans-serif with open letterforms and casual warmth. Approachable and engaging."
+            font_styles["cta"] = "Rounded, inviting sans-serif with friendly character. Welcoming and easy-going."
+            font_styles["price"] = "Clean, friendly sans-serif with rounded terminals. Clear and approachable."
+        
+        # Classic/Traditional/Timeless products
+        elif any(kw in style_lower for kw in ["classic", "timeless", "heritage", "refined"]):
+            font_styles["headline"] = "Classic, well-proportioned serif typeface with balanced contrast and timeless elegance. Traditional letterforms with dignified presence, like Times, Baskerville, or Garamond."
+            font_styles["tagline"] = "Refined, readable serif or light sans-serif with classical proportions. Understated and elegant."
+            font_styles["cta"] = "Clean, balanced serif or sans-serif with classic proportions. Trustworthy and refined."
+            font_styles["price"] = "Clear, traditional serif or sans-serif with excellent legibility."
+        
+        # Default fallback - Professional/Neutral
+        else:
+            font_styles["headline"] = "Professional, well-balanced serif or sans-serif typeface with clear hierarchy and confident presence. Versatile and appropriate for quality products."
+            font_styles["tagline"] = "Clean, readable sans-serif with balanced proportions. Professional and approachable."
+            font_styles["cta"] = "Clear, confident medium-weight sans-serif. Direct and professional."
+            font_styles["price"] = "Clean, modern sans-serif with clear legibility."
+        
+        return font_styles
     
     def create_product_persona(self, image_analysis: Dict[str, Any], user_inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -222,7 +301,13 @@ Format your response as a structured analysis that can be used for advertising p
                 "style": image_analysis.get("structured_analysis", {}).get("style", ""),
                 "suggested_use_cases": image_analysis.get("structured_analysis", {}).get("suggested_use_cases", []),
                 "target_market_indicators": image_analysis.get("structured_analysis", {}).get("target_market_indicators", ""),
-                "raw_analysis": image_analysis.get("raw_analysis", "")
+                "raw_analysis": image_analysis.get("raw_analysis", ""),
+                "font_styles": image_analysis.get("structured_analysis", {}).get("font_styles", {
+                    "headline": "Professional serif or sans-serif with clear hierarchy",
+                    "tagline": "Clean, readable sans-serif",
+                    "cta": "Medium-weight sans-serif",
+                    "price": "Clear, modern sans-serif"
+                })
             },
             "user_inputs": {
                 "product_name": user_inputs.get("product_name", ""),
