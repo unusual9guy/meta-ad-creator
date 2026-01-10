@@ -8,7 +8,7 @@ import base64
 import json
 from typing import Dict, Any, Optional
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.schema import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 import os
 from dotenv import load_dotenv
 
@@ -97,7 +97,17 @@ Format your response as a structured analysis that can be used for advertising p
             
             # Generate response
             response = self.llm.invoke(messages)
-            analysis_text = response.content
+            
+            # Handle response.content which can be a string or list depending on langchain version
+            raw_content = response.content
+            if isinstance(raw_content, list):
+                # Extract text from list of content parts
+                analysis_text = " ".join(
+                    part.get("text", str(part)) if isinstance(part, dict) else str(part)
+                    for part in raw_content
+                )
+            else:
+                analysis_text = str(raw_content) if raw_content else ""
             
             # Parse the analysis into structured format
             structured_analysis = self._parse_analysis(analysis_text)

@@ -622,9 +622,15 @@ elif st.session_state.workflow_step == 'processing':
         
         if not bg_result["success"]:
             st.error(f"❌ Background removal failed: {bg_result.get('error', 'Unknown error')}")
-            if st.button("🔙 Go Back"):
-                reset_workflow()
-                st.rerun()
+            st.info("💡 Tip: This can happen if the AI model didn't generate an image. Please try again.")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("🔄 Retry", key="retry_bg"):
+                    st.rerun()
+            with col2:
+                if st.button("🔙 Go Back", key="back_bg"):
+                    reset_workflow()
+                    st.rerun()
             st.stop()
         
         st.session_state.white_bg_path = bg_result["output_path"]
@@ -637,9 +643,14 @@ elif st.session_state.workflow_step == 'processing':
         
         if not crop_result["success"]:
             st.error(f"❌ Cropping failed: {crop_result.get('error', 'Unknown error')}")
-            if st.button("🔙 Go Back"):
-                reset_workflow()
-                st.rerun()
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("🔄 Retry", key="retry_crop"):
+                    st.rerun()
+            with col2:
+                if st.button("🔙 Go Back", key="back_crop"):
+                    reset_workflow()
+                    st.rerun()
             st.stop()
         
         st.session_state.cropped_path = crop_result["output_path"]

@@ -10,7 +10,7 @@ import re
 import random
 from typing import Dict, Any, Optional
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.schema import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 import os
 from dotenv import load_dotenv
 
@@ -37,7 +37,7 @@ class PromptGeneratorAgent:
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash-image-preview",
             google_api_key=self.api_key,
-            temperature=0.9,  # Higher temperature for more creative variety
+            temperature=0.95,  # Higher temperature for more creative variety
             max_tokens=3000  # Increased to prevent JSON truncation
         )
     
@@ -102,6 +102,11 @@ Use typography that matches these style descriptions. The AI should render text 
         if include_price:
             before_price_text = (before_price or "[ORIGINAL PRICE]").strip()
             after_price_text = (after_price or "[DISCOUNTED PRICE]").strip()
+            # Define limited time offer text outside f-string to avoid backslash issues
+            if promotion_text:
+                limited_time_text = '[PROMOTION IS ALREADY IN HEADLINE - DO NOT DUPLICATE HERE. Leave this field empty or use generic text like "Limited Time Offer" if needed]'
+            else:
+                limited_time_text = '[GENERATE LIMITED TIME OFFER TEXT]'
             price_section = f'''
             "pricing_display": {{
               "typography_style": "{price_style}",
@@ -119,7 +124,7 @@ Use typography that matches these style descriptions. The AI should render text 
               "placement": "BOTTOM EDGE - FULL-WIDTH HORIZONTAL STRIP, aligned center, sitting just above the bottom margin."
             }},
             "limited_time_offer": {{
-              "text": "{'[PROMOTION IS ALREADY IN HEADLINE - DO NOT DUPLICATE HERE. Leave this field empty or use generic text like \"Limited Time Offer\" if needed]' if promotion_text else '[GENERATE LIMITED TIME OFFER TEXT]'}",
+              "text": "{limited_time_text}",
               "typography_style": "{price_style}",
               "style": "If used, integrate this text INSIDE the same horizontal price strip, in smaller type above or beside the prices. Keep it subtle and premium. CRITICAL: PERFECT spelling and grammar.",
               "placement": "INTEGRATED inside the same bottom horizontal price strip."
@@ -625,8 +630,16 @@ CRITICAL JSON FORMATTING:
             # Generate response
             response = self.llm.invoke(messages)
             
-            # Parse and structure the response
-            prompt_text = response.content
+            # Handle response.content which can be a string or list depending on langchain version
+            raw_content = response.content
+            if isinstance(raw_content, list):
+                # Extract text from list of content parts
+                prompt_text = " ".join(
+                    part.get("text", str(part)) if isinstance(part, dict) else str(part)
+                    for part in raw_content
+                )
+            else:
+                prompt_text = str(raw_content) if raw_content else ""
 
             # Post-process to enforce full promotion text (prevent abbreviation like "W SALE")
             if promotion_text:
