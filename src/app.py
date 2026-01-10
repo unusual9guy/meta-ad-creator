@@ -657,34 +657,9 @@ elif st.session_state.workflow_step == 'processing':
         progress_bar.progress(100)
         status_text.markdown("**✅ Processing complete!**")
         
-        st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
-        st.success("✅ Image processed successfully!")
-        
-        st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("**Original Image**")
-            st.image(st.session_state.image_path, width='stretch')
-        
-        with col2:
-            st.markdown("**Processed Image**")
-            cropped_image = Image.open(st.session_state.cropped_path)
-            st.image(cropped_image, width='stretch')
-        
-        st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
-        
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            if st.button("✅ Confirm & Continue to Prompt Setup", width='stretch', type="primary"):
-                st.session_state.workflow_step = 'prompt_input'
-                st.rerun()
-        
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            if st.button("🔙 Start Over"):
-                reset_workflow()
-                st.rerun()
+        # Automatically proceed to next step
+        st.session_state.workflow_step = 'prompt_input'
+        st.rerun()
     
     except Exception as e:
         st.error(f"❌ Error during processing: {str(e)}")
@@ -696,14 +671,6 @@ elif st.session_state.workflow_step == 'processing':
 elif st.session_state.workflow_step == 'prompt_input':
     st.markdown("### ⚙️ Agent 3 Setup: Configure Ad Creative")
     st.markdown("Configure logo, promotion, pricing, and typography for your ad creative.")
-    
-    st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
-    
-    if st.session_state.cropped_path:
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            st.markdown("**Processed Image**")
-            st.image(st.session_state.cropped_path, width=500)
     
     st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
     
