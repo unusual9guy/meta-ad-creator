@@ -52,17 +52,27 @@ class ProductAnalyserAgent:
         """
         try:
             # Build system prompt for product analysis
-            system_prompt = """You are an expert product analyst specializing in e-commerce and advertising.
-Your task is to analyze product images and extract comprehensive information about the product.
+            system_prompt = """You are an expert product analyst and brand strategist specializing in e-commerce and advertising.
+Your task is to analyze product images and extract comprehensive information for creating premium ad creatives.
 
 Analyze the product image and provide a structured analysis including:
 
-1. **Product Type/Category**: What type of product is this? (e.g., home decor, kitchenware, photo frame, organizer, etc.)
-2. **Materials**: What materials are visible? (e.g., wood, metal, ceramic, fabric, etc.)
+1. **Product Type/Category**: What type of product is this? (e.g., home decor, kitchenware, supplements, skincare, jewelry, electronics, etc.)
+2. **Materials**: What materials are visible? (e.g., wood, metal, ceramic, fabric, glass, plastic, etc.)
 3. **Key Features**: What are the visible features, design elements, or unique characteristics?
-4. **Style/Aesthetic**: What is the design style? (e.g., modern, rustic, minimalist, luxury, etc.)
+4. **Style/Aesthetic**: What is the design style? (e.g., modern, rustic, minimalist, luxury, premium, casual, sporty, etc.)
 5. **Suggested Use Cases**: What are potential use cases or applications for this product?
 6. **Target Market Indicators**: Based on the product's appearance, what market segment might this appeal to?
+
+7. **BRAND POSITIONING** (CRITICAL - Choose ONE):
+   - **LUXURY/PREMIUM**: High-end products like Hermès, Dior, Chanel, Bang & Olufsen, Apple. Characterized by: subtle colors, muted palettes, understated elegance, refined aesthetics, minimal text, exclusive feel.
+   - **ASPIRATIONAL**: Mid-premium brands like Coach, Michael Kors, Samsung, Sony. Characterized by: polished look, sophisticated but accessible, quality materials.
+   - **MASS CONSUMER**: Everyday products for general consumers. Products for daily use, practical, functional, value-oriented.
+   - **SPORTY/ATHLETIC**: Nike, Adidas, Under Armour style. Bold, energetic, dynamic, bright colors, action-oriented.
+   - **HEALTH/WELLNESS**: Supplements, vitamins, fitness products, health foods. Clean, trustworthy, benefit-focused.
+   - **PLAYFUL/FUN**: Toys, games, candy, casual products. Bright, cheerful, energetic, fun colors.
+
+8. **Key Selling Points**: List 3-5 unique benefits or features that should be highlighted in the ad.
 
 Provide your analysis in a clear, structured format that can be used to create compelling ad copy.
 Be specific and detailed - focus on what makes this product unique or appealing."""
@@ -83,6 +93,8 @@ Be specific and detailed - focus on what makes this product unique or appealing.
 - Style and aesthetic
 - Suggested use cases
 - Target market indicators
+- Brand Positioning (MUST be one of: LUXURY/PREMIUM, ASPIRATIONAL, MASS CONSUMER, SPORTY/ATHLETIC, HEALTH/WELLNESS, or PLAYFUL/FUN)
+- Key Selling Points (3-5 benefits to highlight in ads)
 
 Format your response as a structured analysis that can be used for advertising purposes."""
                     },
@@ -150,7 +162,10 @@ Format your response as a structured analysis that can be used for advertising p
             "style": "",
             "suggested_use_cases": [],
             "target_market_indicators": "",
-            "font_styles": {}  # Will be populated by determine_font_styles()
+            "brand_positioning": "MASS CONSUMER",  # Default positioning
+            "key_selling_points": [],
+            "font_styles": {},  # Will be populated by determine_font_styles()
+            "ad_style": {}  # Will be populated by determine_ad_style()
         }
         
         # Try to extract structured information from the text
@@ -193,12 +208,37 @@ Format your response as a structured analysis that can be used for advertising p
                 current_section = "target_market_indicators"
                 if ':' in line:
                     structured["target_market_indicators"] = line.split(':', 1)[1].strip()
+            elif "brand positioning" in line_lower or "positioning" in line_lower:
+                current_section = "brand_positioning"
+                if ':' in line:
+                    pos_text = line.split(':', 1)[1].strip().upper()
+                    # Map to standard positioning categories
+                    if any(kw in pos_text for kw in ["LUXURY", "PREMIUM", "HIGH-END", "HIGH END"]):
+                        structured["brand_positioning"] = "LUXURY"
+                    elif any(kw in pos_text for kw in ["ASPIRATIONAL", "MID-PREMIUM"]):
+                        structured["brand_positioning"] = "ASPIRATIONAL"
+                    elif any(kw in pos_text for kw in ["SPORTY", "ATHLETIC", "SPORT", "FITNESS"]):
+                        structured["brand_positioning"] = "SPORTY"
+                    elif any(kw in pos_text for kw in ["HEALTH", "WELLNESS", "SUPPLEMENT", "VITAMIN"]):
+                        structured["brand_positioning"] = "HEALTH_WELLNESS"
+                    elif any(kw in pos_text for kw in ["PLAYFUL", "FUN", "CASUAL", "CHEERFUL"]):
+                        structured["brand_positioning"] = "PLAYFUL"
+                    else:
+                        structured["brand_positioning"] = "MASS CONSUMER"
+            elif "selling point" in line_lower or "key benefit" in line_lower:
+                current_section = "key_selling_points"
+                if ':' in line:
+                    points_str = line.split(':', 1)[1].strip()
+                    if points_str:
+                        structured["key_selling_points"] = [p.strip() for p in points_str.replace(',', '|').split('|') if p.strip()]
             elif current_section and line and not line.startswith('-') and not line.startswith('*'):
                 # Continue adding to current section
                 if current_section == "materials" and line:
                     structured["materials"].append(line.strip(' -•'))
                 elif current_section == "features" and line:
                     structured["features"].append(line.strip(' -•'))
+                elif current_section == "key_selling_points" and line:
+                    structured["key_selling_points"].append(line.strip(' -•*'))
                 elif current_section == "suggested_use_cases" and line:
                     structured["suggested_use_cases"].append(line.strip(' -•'))
         
@@ -206,9 +246,17 @@ Format your response as a structured analysis that can be used for advertising p
         structured["materials"] = [m for m in structured["materials"] if m]
         structured["features"] = [f for f in structured["features"] if f]
         structured["suggested_use_cases"] = [uc for uc in structured["suggested_use_cases"] if uc]
+        structured["key_selling_points"] = [ksp for ksp in structured["key_selling_points"] if ksp]
         
         # Determine font styles based on product style
         structured["font_styles"] = self._determine_font_styles(structured["style"], structured["materials"])
+        
+        # Determine ad style based on brand positioning
+        structured["ad_style"] = self._determine_ad_style(
+            structured["brand_positioning"], 
+            structured["style"],
+            structured["key_selling_points"]
+        )
         
         return structured
     
@@ -287,6 +335,213 @@ Format your response as a structured analysis that can be used for advertising p
         
         return font_styles
     
+    def _determine_ad_style(self, brand_positioning: str, style: str, key_selling_points: list) -> Dict[str, Any]:
+        """
+        Determine the ad creative style based on brand positioning.
+        Returns comprehensive style guidelines for diverse, professional ad creatives.
+        
+        Args:
+            brand_positioning: The brand positioning category
+            style: Product style/aesthetic
+            key_selling_points: List of key selling points to highlight
+        
+        Returns:
+            Dictionary with ad style specifications
+        """
+        import random
+        
+        # Define ad template styles based on reference images and professional standards
+        ad_templates = {
+            "LUXURY": {
+                "templates": [
+                    {
+                        "name": "Editorial Elegance",
+                        "description": "Minimalist luxury editorial style with generous white space",
+                        "background": "Pure white or soft cream with subtle gradient, reminiscent of Vogue or Harper's Bazaar",
+                        "color_palette": ["#FFFFFF", "#F5F5F0", "#1A1A1A", "#C9B037", "#2C2C2C"],
+                        "layout": "Centered product with elegant serif headline above, minimal text, maximum negative space",
+                        "mood": "Understated luxury, exclusive, refined"
+                    },
+                    {
+                        "name": "Dark Luxury",
+                        "description": "Moody, sophisticated dark background with dramatic lighting",
+                        "background": "Deep charcoal or black with soft spotlight on product",
+                        "color_palette": ["#1A1A1A", "#2D2D2D", "#C9B037", "#FFFFFF", "#8B7355"],
+                        "layout": "Product hero with subtle golden accents, minimal elegant typography",
+                        "mood": "Opulent, exclusive, mysterious"
+                    },
+                    {
+                        "name": "Marble & Gold",
+                        "description": "Luxurious marble texture with gold accents",
+                        "background": "White marble with subtle gray veining, gold leaf accents",
+                        "color_palette": ["#FFFFFF", "#E8E4E0", "#C9B037", "#1A1A1A", "#B8860B"],
+                        "layout": "Asymmetric composition with product at golden ratio, refined serif typography",
+                        "mood": "Timeless elegance, heritage luxury"
+                    }
+                ],
+                "typography_rules": "Thin, elegant serifs with generous letter-spacing. Minimal text. Let the product speak.",
+                "avoid": "Bright colors, busy layouts, discount badges, exclamation marks, casual language"
+            },
+            "ASPIRATIONAL": {
+                "templates": [
+                    {
+                        "name": "Modern Sophistication",
+                        "description": "Clean, contemporary aesthetic with subtle gradients",
+                        "background": "Soft gradient from warm gray to cream",
+                        "color_palette": ["#F8F6F4", "#E5DED5", "#2C3E50", "#C9956C", "#1A1A1A"],
+                        "layout": "Product centered with clean typography, balanced composition",
+                        "mood": "Polished, contemporary, accessible luxury"
+                    },
+                    {
+                        "name": "Lifestyle Context",
+                        "description": "Product in an aspirational lifestyle setting",
+                        "background": "Warm, inviting interior setting or lifestyle scene",
+                        "color_palette": ["#F5F0EB", "#D4C4B5", "#2C3E50", "#B8860B", "#1A1A1A"],
+                        "layout": "Product in context with lifestyle elements, story-driven",
+                        "mood": "Aspirational, attainable elegance"
+                    }
+                ],
+                "typography_rules": "Modern serifs or refined sans-serifs. Clear hierarchy, professional.",
+                "avoid": "Cheap-looking effects, overly casual language"
+            },
+            "SPORTY": {
+                "templates": [
+                    {
+                        "name": "Dynamic Energy",
+                        "description": "Bold, energetic design with dynamic angles",
+                        "background": "Vibrant gradient with dynamic diagonal lines or geometric shapes",
+                        "color_palette": ["#FF6B35", "#1A1A1A", "#FFFFFF", "#00D4FF", "#FFD700"],
+                        "layout": "Dynamic diagonal composition, bold typography, action-oriented",
+                        "mood": "Energetic, powerful, motivating"
+                    },
+                    {
+                        "name": "Urban Athletic",
+                        "description": "Street-style athletic aesthetic",
+                        "background": "Concrete texture with bold color overlays",
+                        "color_palette": ["#1A1A1A", "#FF0000", "#FFFFFF", "#00FF00", "#FFFF00"],
+                        "layout": "Bold, in-your-face product placement, strong sans-serif typography",
+                        "mood": "Urban, bold, confident"
+                    },
+                    {
+                        "name": "Performance Focus",
+                        "description": "Clean, technical aesthetic emphasizing performance",
+                        "background": "Sleek gradient with subtle tech-inspired grid or lines",
+                        "color_palette": ["#0A0A0A", "#00D4FF", "#FFFFFF", "#FF6B00", "#1A1A1A"],
+                        "layout": "Product hero with technical callouts, performance metrics style",
+                        "mood": "High-tech, professional athletic"
+                    }
+                ],
+                "typography_rules": "Bold, condensed sans-serifs. Strong, impactful headlines. Action words.",
+                "avoid": "Delicate serifs, muted colors, passive language"
+            },
+            "HEALTH_WELLNESS": {
+                "templates": [
+                    {
+                        "name": "Clean Wellness",
+                        "description": "Fresh, clean aesthetic with benefit-focused design like the PCOS Sidekick example",
+                        "background": "Soft sky blue gradient or clean white with gentle color accents",
+                        "color_palette": ["#87CEEB", "#FFFFFF", "#4A90A4", "#2D5A27", "#1A1A1A"],
+                        "layout": "Product prominently displayed with 3-4 benefit icons/bullets on the side, clean headline at top",
+                        "mood": "Trustworthy, clean, health-focused"
+                    },
+                    {
+                        "name": "Natural Vitality",
+                        "description": "Organic, nature-inspired wellness aesthetic",
+                        "background": "Soft green gradient or natural texture with botanical elements",
+                        "color_palette": ["#E8F5E9", "#4CAF50", "#2E7D32", "#FFFFFF", "#1A1A1A"],
+                        "layout": "Product with natural elements, benefit-focused messaging",
+                        "mood": "Natural, pure, healthy"
+                    },
+                    {
+                        "name": "Split Comparison",
+                        "description": "Before/after or comparison style like the Liver Function example",
+                        "background": "Split screen with contrasting colors (healthy green/blue vs. warning red)",
+                        "color_palette": ["#4CAF50", "#E53935", "#FFFFFF", "#1A1A1A", "#FFD700"],
+                        "layout": "Dramatic split-screen comparison with bold messaging",
+                        "mood": "Impactful, problem-solution oriented"
+                    }
+                ],
+                "typography_rules": "Clean, readable sans-serifs. Trust-building, clear benefit statements.",
+                "avoid": "Unsubstantiated claims, clinical coldness"
+            },
+            "PLAYFUL": {
+                "templates": [
+                    {
+                        "name": "Bright & Cheerful",
+                        "description": "Vibrant, fun design with playful elements",
+                        "background": "Bright, cheerful gradient with fun shapes or patterns",
+                        "color_palette": ["#FF69B4", "#00CED1", "#FFD700", "#FF6347", "#FFFFFF"],
+                        "layout": "Playful, dynamic composition with fun typography",
+                        "mood": "Joyful, fun, approachable"
+                    },
+                    {
+                        "name": "Pop Art Inspired",
+                        "description": "Bold, pop-art influenced design",
+                        "background": "Bold color blocks with halftone patterns or comic-style elements",
+                        "color_palette": ["#FF1493", "#00FF00", "#FFFF00", "#00BFFF", "#FFFFFF"],
+                        "layout": "Bold, graphic composition with impactful typography",
+                        "mood": "Bold, fun, eye-catching"
+                    }
+                ],
+                "typography_rules": "Rounded, friendly fonts. Playful but readable. Fun language.",
+                "avoid": "Serious, corporate aesthetics"
+            },
+            "MASS CONSUMER": {
+                "templates": [
+                    {
+                        "name": "Lifestyle Elegant",
+                        "description": "Warm, inviting lifestyle aesthetic like the Mixer example",
+                        "background": "Warm beige or cream with soft, natural lighting",
+                        "color_palette": ["#F5E6D3", "#E8D4B8", "#2C3E50", "#1A1A1A", "#FFFFFF"],
+                        "layout": "Product in lifestyle context with elegant script headline, benefit icons below",
+                        "mood": "Warm, inviting, relatable"
+                    },
+                    {
+                        "name": "Clean Modern",
+                        "description": "Clean, contemporary design with clear messaging",
+                        "background": "Soft gradient or solid with subtle texture",
+                        "color_palette": ["#F8F9FA", "#E9ECEF", "#495057", "#212529", "#007BFF"],
+                        "layout": "Centered product with clear hierarchy, benefit statements",
+                        "mood": "Modern, accessible, trustworthy"
+                    },
+                    {
+                        "name": "Bold Value",
+                        "description": "Strong promotional design with clear value proposition",
+                        "background": "Bold color with dynamic elements",
+                        "color_palette": ["#FF6B00", "#1A1A1A", "#FFFFFF", "#FFD700", "#00CED1"],
+                        "layout": "Product hero with bold promotional messaging, clear CTA",
+                        "mood": "Energetic, value-focused, action-oriented"
+                    }
+                ],
+                "typography_rules": "Clear, readable fonts. Balanced between approachable and professional.",
+                "avoid": "Overly cheap-looking designs, cluttered layouts"
+            }
+        }
+        
+        # Get the template set for this positioning
+        positioning_key = brand_positioning if brand_positioning in ad_templates else "MASS CONSUMER"
+        template_set = ad_templates[positioning_key]
+        
+        # Randomly select one template from the available options
+        selected_template = random.choice(template_set["templates"])
+        
+        # Build the ad style dictionary
+        ad_style = {
+            "brand_positioning": brand_positioning,
+            "template_name": selected_template["name"],
+            "template_description": selected_template["description"],
+            "background_style": selected_template["background"],
+            "color_palette": selected_template["color_palette"],
+            "layout_approach": selected_template["layout"],
+            "mood": selected_template["mood"],
+            "typography_rules": template_set["typography_rules"],
+            "avoid": template_set["avoid"],
+            "key_selling_points": key_selling_points[:4] if key_selling_points else [],  # Max 4 selling points
+            "all_available_templates": [t["name"] for t in template_set["templates"]]
+        }
+        
+        return ad_style
+    
     def create_product_persona(self, image_analysis: Dict[str, Any], user_inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
         Combine AI analysis and user inputs into structured product persona
@@ -303,21 +558,41 @@ Format your response as a structured analysis that can be used for advertising p
         Returns:
             Structured product persona dictionary
         """
+        # Get structured analysis with defaults
+        structured = image_analysis.get("structured_analysis", {})
+        
+        # Default ad style if not present
+        default_ad_style = {
+            "brand_positioning": "MASS CONSUMER",
+            "template_name": "Clean Modern",
+            "template_description": "Clean, contemporary design with clear messaging",
+            "background_style": "Soft gradient or solid with subtle texture",
+            "color_palette": ["#F8F9FA", "#E9ECEF", "#495057", "#212529", "#007BFF"],
+            "layout_approach": "Centered product with clear hierarchy, benefit statements",
+            "mood": "Modern, accessible, trustworthy",
+            "typography_rules": "Clear, readable fonts. Balanced between approachable and professional.",
+            "avoid": "Overly cheap-looking designs, cluttered layouts",
+            "key_selling_points": []
+        }
+        
         persona = {
             "ai_analysis": {
-                "product_type": image_analysis.get("structured_analysis", {}).get("product_type", ""),
-                "materials": image_analysis.get("structured_analysis", {}).get("materials", []),
-                "features": image_analysis.get("structured_analysis", {}).get("features", []),
-                "style": image_analysis.get("structured_analysis", {}).get("style", ""),
-                "suggested_use_cases": image_analysis.get("structured_analysis", {}).get("suggested_use_cases", []),
-                "target_market_indicators": image_analysis.get("structured_analysis", {}).get("target_market_indicators", ""),
+                "product_type": structured.get("product_type", ""),
+                "materials": structured.get("materials", []),
+                "features": structured.get("features", []),
+                "style": structured.get("style", ""),
+                "suggested_use_cases": structured.get("suggested_use_cases", []),
+                "target_market_indicators": structured.get("target_market_indicators", ""),
+                "brand_positioning": structured.get("brand_positioning", "MASS CONSUMER"),
+                "key_selling_points": structured.get("key_selling_points", []),
                 "raw_analysis": image_analysis.get("raw_analysis", ""),
-                "font_styles": image_analysis.get("structured_analysis", {}).get("font_styles", {
+                "font_styles": structured.get("font_styles", {
                     "headline": "Professional serif or sans-serif with clear hierarchy",
                     "tagline": "Clean, readable sans-serif",
                     "cta": "Medium-weight sans-serif",
                     "price": "Clear, modern sans-serif"
-                })
+                }),
+                "ad_style": structured.get("ad_style", default_ad_style)
             },
             "user_inputs": {
                 "product_name": user_inputs.get("product_name", ""),

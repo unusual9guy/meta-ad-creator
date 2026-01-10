@@ -478,6 +478,18 @@ elif st.session_state.workflow_step == 'product_analysis':
             st.markdown(f"**Product Type:** {structured.get('product_type', 'Not detected')}")
             st.markdown(f"**Materials:** {', '.join(structured.get('materials', [])) if structured.get('materials') else 'Not detected'}")
             st.markdown(f"**Style:** {structured.get('style', 'Not detected')}")
+            
+            # Show brand positioning with styling
+            brand_pos = structured.get('brand_positioning', 'MASS CONSUMER')
+            positioning_emoji = {
+                "LUXURY": "💎",
+                "ASPIRATIONAL": "✨", 
+                "SPORTY": "🏃",
+                "HEALTH_WELLNESS": "🌿",
+                "PLAYFUL": "🎨",
+                "MASS CONSUMER": "🛒"
+            }
+            st.markdown(f"**Brand Positioning:** {positioning_emoji.get(brand_pos, '🛒')} {brand_pos}")
         
         with col2:
             st.markdown("**🔍 Key Features**")
@@ -487,6 +499,12 @@ elif st.session_state.workflow_step == 'product_analysis':
                     st.markdown(f"- {feature}")
             else:
                 st.markdown("No features detected")
+            
+            # Show selected ad template
+            ad_style = structured.get('ad_style', {})
+            if ad_style:
+                st.markdown(f"**🎨 Ad Template:** {ad_style.get('template_name', 'Auto-selected')}")
+                st.markdown(f"**Mood:** {ad_style.get('mood', 'Professional')}")
         
         st.markdown("<div class='section-spacer'></div>", unsafe_allow_html=True)
         

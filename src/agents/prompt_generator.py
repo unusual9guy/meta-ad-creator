@@ -42,16 +42,18 @@ class PromptGeneratorAgent:
         )
     
     def _build_system_prompt(self, font_styles: Optional[Dict[str, str]] = None,
+                            ad_style: Optional[Dict[str, Any]] = None,
                             include_price: bool = True,
                             logo_path: Optional[str] = None,
                             promotion_text: Optional[str] = None,
                             before_price: Optional[str] = None,
                             after_price: Optional[str] = None) -> str:
         """
-        Build system prompt with auto-detected font styles and options
+        Build system prompt with auto-detected font styles and ad style options
         
         Args:
             font_styles: Dictionary with font style descriptions for headline, tagline, cta, price
+            ad_style: Dictionary with ad style specifications from product analysis
             include_price: Whether to include pricing information
             logo_path: Path to company logo (optional)
             promotion_text: Promotion text (e.g., "30% winter sale") (optional)
@@ -137,41 +139,60 @@ Use typography that matches these style descriptions. The AI should render text 
         # Font instructions are already complete, no placeholders to replace
         font_instructions_processed = font_instructions
         
-        # Add randomization for variety in each generation
-        background_options = [
-            "warm beige gradient transitioning to soft cream, reminiscent of high-end furniture catalogs",
-            "cool gray concrete texture with subtle imperfections for industrial-chic aesthetic",
-            "natural oak wood grain surface with soft golden hour lighting",
-            "luxurious marble surface with delicate veining in cream and gray tones",
-            "soft linen fabric texture in muted earth tones with gentle folds",
-            "minimalist pure white with dramatic directional shadows",
-            "dark charcoal moody background with single spotlight creating drama",
-            "soft terracotta clay surface with Mediterranean warmth",
-            "brushed metal surface with subtle reflections for modern tech aesthetic",
-            "natural stone texture in warm sandstone tones"
-        ]
-        
-        layout_options = [
-            "asymmetric with product positioned at golden ratio (61.8% from left), text balancing the composition",
-            "centered product with elegant text framing above and below in classic luxury style",
-            "dynamic diagonal composition with product on lower-right, text flowing from upper-left",
-            "minimalist with product dominating 70% of frame, subtle text elements",
-            "editorial style with product on left third, generous text space on right",
-            "modern split-screen feel with clear zones for product and messaging"
-        ]
-        
-        mood_options = [
-            "warm and inviting, like a cozy home lifestyle brand",
-            "cool and sophisticated, like a premium tech company",
-            "earthy and organic, like an artisan craft brand",
-            "bold and confident, like a luxury fashion house",
-            "serene and minimal, like a Scandinavian design brand",
-            "rich and opulent, like a heritage luxury brand"
-        ]
-        
-        selected_background = random.choice(background_options)
-        selected_layout = random.choice(layout_options)
-        selected_mood = random.choice(mood_options)
+        # Use ad_style if provided, otherwise fall back to random selection
+        if ad_style:
+            # Use the structured ad style from product analysis
+            selected_background = ad_style.get("background_style", "soft gradient with subtle texture")
+            selected_layout = ad_style.get("layout_approach", "centered product with clear hierarchy")
+            selected_mood = ad_style.get("mood", "modern, accessible, trustworthy")
+            template_name = ad_style.get("template_name", "Clean Modern")
+            brand_positioning = ad_style.get("brand_positioning", "MASS CONSUMER")
+            color_palette = ad_style.get("color_palette", ["#F8F9FA", "#E9ECEF", "#495057", "#212529"])
+            typography_rules = ad_style.get("typography_rules", "Clear, readable fonts")
+            things_to_avoid = ad_style.get("avoid", "Overly cheap-looking designs")
+            key_selling_points = ad_style.get("key_selling_points", [])
+        else:
+            # Fallback to random selection for legacy mode
+            background_options = [
+                "warm beige gradient transitioning to soft cream, reminiscent of high-end furniture catalogs",
+                "cool gray concrete texture with subtle imperfections for industrial-chic aesthetic",
+                "natural oak wood grain surface with soft golden hour lighting",
+                "luxurious marble surface with delicate veining in cream and gray tones",
+                "soft linen fabric texture in muted earth tones with gentle folds",
+                "minimalist pure white with dramatic directional shadows",
+                "dark charcoal moody background with single spotlight creating drama",
+                "soft terracotta clay surface with Mediterranean warmth",
+                "brushed metal surface with subtle reflections for modern tech aesthetic",
+                "natural stone texture in warm sandstone tones"
+            ]
+            
+            layout_options = [
+                "asymmetric with product positioned at golden ratio (61.8% from left), text balancing the composition",
+                "centered product with elegant text framing above and below in classic luxury style",
+                "dynamic diagonal composition with product on lower-right, text flowing from upper-left",
+                "minimalist with product dominating 70% of frame, subtle text elements",
+                "editorial style with product on left third, generous text space on right",
+                "modern split-screen feel with clear zones for product and messaging"
+            ]
+            
+            mood_options = [
+                "warm and inviting, like a cozy home lifestyle brand",
+                "cool and sophisticated, like a premium tech company",
+                "earthy and organic, like an artisan craft brand",
+                "bold and confident, like a luxury fashion house",
+                "serene and minimal, like a Scandinavian design brand",
+                "rich and opulent, like a heritage luxury brand"
+            ]
+            
+            selected_background = random.choice(background_options)
+            selected_layout = random.choice(layout_options)
+            selected_mood = random.choice(mood_options)
+            template_name = "Random Selection"
+            brand_positioning = "GENERAL"
+            color_palette = ["#F8F9FA", "#2C2C2C", "#C9B037", "#FFFFFF"]
+            typography_rules = "Professional, balanced typography"
+            things_to_avoid = "Generic template looks"
+            key_selling_points = []
         
         # Build critical mandates list with conditional pricing instruction
         if include_price:
@@ -208,26 +229,44 @@ Use typography that matches these style descriptions. The AI should render text 
                 '4) Could only work for THIS type of product]'
             )
         
+        # Build color palette string
+        color_palette_str = ", ".join(color_palette) if color_palette else "#F8F9FA, #2C2C2C, #FFFFFF"
+        
+        # Build selling points string
+        selling_points_str = "\n".join([f"  - {sp}" for sp in key_selling_points]) if key_selling_points else "  - Highlight the product's unique features"
+        
         system_prompt = f"""You are an expert creative director at a top advertising agency.
 Your task is to create a structured JSON prompt for generating PREMIUM Meta ad creatives.
 The output should look like it was designed by a professional team at agencies like Ogilvy, Wieden+Kennedy, or Droga5.
+
+**TEMPLATE STYLE: {template_name}**
+**BRAND POSITIONING: {brand_positioning}**
 
 CREATIVE DIRECTION FOR THIS AD:
 - BACKGROUND STYLE: {selected_background}
 - LAYOUT APPROACH: {selected_layout}  
 - OVERALL MOOD: {selected_mood}
+- COLOR PALETTE: {color_palette_str}
+- TYPOGRAPHY RULES: {typography_rules}
+
+KEY SELLING POINTS TO HIGHLIGHT:
+{selling_points_str}
+
+BRAND POSITIONING GUIDELINES:
+{self._get_positioning_guidelines(brand_positioning)}
 
 PROFESSIONAL QUALITY STANDARDS:
 - Study reference: Apple product ads, Dyson campaigns, Bang & Olufsen visuals, Aesop packaging
 - The ad must look like it cost $10,000+ to produce - premium, polished, intentional
 - Every element should feel deliberately placed by a skilled designer
-- Use sophisticated color grading - not flat or oversaturated
+- Use the color palette provided - create sophisticated color grading, not flat or oversaturated
 - Typography should be perfectly balanced with proper kerning and hierarchy
 - Negative space is crucial - let the design breathe
 - Shadows should be soft, realistic, and grounded (not floating)
 - Lighting should feel natural yet cinematic
+- CRITICAL AVOID: {things_to_avoid}
 - AVOID: Template looks, clipart feel, generic stock photo aesthetic, busy designs
-        - PERFECT spelling and grammar - NO spelling mistakes allowed
+- PERFECT spelling and grammar - NO spelling mistakes allowed
 
 **ABSOLUTELY CRITICAL - FONT USAGE:**
 - The "font" field in JSON is a TECHNICAL SPECIFICATION for which font to USE, NOT text to DISPLAY
@@ -434,6 +473,82 @@ TEXT GENERATION REQUIREMENTS:
         
         return system_prompt
     
+    def _get_positioning_guidelines(self, brand_positioning: str) -> str:
+        """
+        Get specific creative guidelines based on brand positioning.
+        
+        Args:
+            brand_positioning: The brand positioning category
+            
+        Returns:
+            String with positioning-specific guidelines
+        """
+        guidelines = {
+            "LUXURY": """
+- LUXURY BRAND APPROACH (think Hermès, Dior, Chanel, Bang & Olufsen):
+  • Use muted, sophisticated color palette - no bright or garish colors
+  • Generous negative space - let the product breathe
+  • Minimal text - the product is the hero
+  • Elegant, refined serif typography for headlines
+  • Subtle, understated messaging - avoid exclamation marks
+  • Premium materials feel - marble, gold accents, soft shadows
+  • Editorial, magazine-quality aesthetic
+  • Avoid: Discount badges, loud CTAs, busy layouts, bright colors""",
+            
+            "ASPIRATIONAL": """
+- ASPIRATIONAL BRAND APPROACH (think Coach, Michael Kors, Samsung):
+  • Polished, contemporary aesthetic
+  • Clean layouts with clear hierarchy
+  • Sophisticated but accessible tone
+  • Modern serif or refined sans-serif typography
+  • Quality feel without being unapproachable
+  • Lifestyle context that feels attainable
+  • Avoid: Overly exclusive language, too minimal, cheap-looking elements""",
+            
+            "SPORTY": """
+- SPORTY/ATHLETIC BRAND APPROACH (think Nike, Adidas, Under Armour):
+  • Bold, energetic design with dynamic angles
+  • Vibrant, contrasting colors - not afraid to be loud
+  • Strong, impactful typography - bold sans-serifs
+  • Action-oriented language and imagery
+  • High energy, motivational mood
+  • Dynamic compositions with movement
+  • Avoid: Subtle, muted colors, passive language, static layouts""",
+            
+            "HEALTH_WELLNESS": """
+- HEALTH/WELLNESS BRAND APPROACH (like clean supplement brands):
+  • Fresh, clean aesthetic with calming colors
+  • Trust-building design elements
+  • Benefit-focused messaging with icons/bullets
+  • Clear, readable sans-serif typography
+  • Natural, pure, healthy mood
+  • Can include benefit icons or feature highlights
+  • Split-screen comparisons work well for problem-solution messaging
+  • Avoid: Unsubstantiated claims, clinical coldness, busy layouts""",
+            
+            "PLAYFUL": """
+- PLAYFUL/FUN BRAND APPROACH:
+  • Bright, cheerful color palette
+  • Fun, rounded typography
+  • Energetic, joyful mood
+  • Playful compositions with personality
+  • Approachable, friendly tone
+  • Can include fun shapes, patterns, or illustrations
+  • Avoid: Serious, corporate aesthetics, muted colors""",
+            
+            "MASS CONSUMER": """
+- MASS CONSUMER BRAND APPROACH:
+  • Clean, accessible design
+  • Clear value proposition
+  • Balanced between professional and approachable
+  • Lifestyle context that feels relatable
+  • Clear messaging with benefit highlights
+  • Warm, inviting mood or bold value-focused
+  • Avoid: Overly cheap-looking designs, cluttered layouts, confusing hierarchy"""
+        }
+        
+        return guidelines.get(brand_positioning, guidelines["MASS CONSUMER"])
+    
     def encode_image(self, image_path: str) -> str:
         """Encode image to base64 for API"""
         with open(image_path, "rb") as image_file:
@@ -486,6 +601,13 @@ TEXT GENERATION REQUIREMENTS:
                 # Extract font styles from AI analysis
                 font_styles = ai_analysis.get('font_styles', None)
                 
+                # Extract ad_style from AI analysis (contains brand positioning-based template)
+                ad_style = ai_analysis.get('ad_style', None)
+                
+                # Extract brand positioning and key selling points
+                brand_positioning = ai_analysis.get('brand_positioning', 'MASS CONSUMER')
+                key_selling_points = ai_analysis.get('key_selling_points', [])
+                
                 # Build comprehensive product context
                 product_context = f"""
 PRODUCT ANALYSIS (from AI):
@@ -494,6 +616,8 @@ PRODUCT ANALYSIS (from AI):
 - Key Features: {', '.join(ai_analysis.get('features', [])) if ai_analysis.get('features') else 'Not specified'}
 - Style: {ai_analysis.get('style', 'Not specified')}
 - Use Cases: {', '.join(ai_analysis.get('suggested_use_cases', [])) if ai_analysis.get('suggested_use_cases') else 'Not specified'}
+- Brand Positioning: {brand_positioning}
+- Key Selling Points: {', '.join(key_selling_points) if key_selling_points else 'Not specified'}
 
 USER PROVIDED INFORMATION:
 - Product Name: {product_name}
@@ -503,6 +627,7 @@ USER PROVIDED INFORMATION:
 """
             else:
                 font_styles = None  # Will use defaults
+                ad_style = None  # Will use defaults
                 # Legacy mode: use description and user_inputs
                 product_description = description or ""
                 target_audience = user_inputs.get('target_audience', 'general') if user_inputs else 'general'
@@ -513,9 +638,10 @@ Target Audience: {target_audience}
 User Inputs: {user_inputs or "None provided"}
 """
             
-            # Build system prompt with auto-detected font styles
+            # Build system prompt with auto-detected font styles and ad style
             system_prompt = self._build_system_prompt(
                 font_styles=font_styles,
+                ad_style=ad_style,
                 include_price=include_price,
                 logo_path=logo_path,
                 promotion_text=promotion_text,
