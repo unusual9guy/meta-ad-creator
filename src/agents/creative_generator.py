@@ -223,19 +223,76 @@ CRITICAL INSTRUCTIONS FOR IMAGE GENERATION:
    - Example: If font is "Playfair Display" and text is "ELEGANT DINING", use Playfair Display font to render "ELEGANT DINING" - do NOT display "Playfair Display" as text
    - All displayed text should be actual product copy, NOT font names
 
-5. PROMOTION TEXT: If a promotion text is included in the headline, preserve it EXACTLY as written.
-   - Do NOT abbreviate, truncate, or shorten ANY words in the promotion text
-   - If the headline says "30% WINTER SALE", display it as "30% WINTER SALE" (with BOTH words complete), NOT "30% W SALE" or "30% W Sale"
-   - NEVER abbreviate "Winter" to "W" or "Sale" to "S" - always use complete, full words
-   - Keep the full, complete promotion text exactly as provided with ALL words spelled out completely
-   - Examples: "30% Winter Sale" should be "30% WINTER SALE" (full text), not "30% W Sale" or "30% W SALE"
-   - Examples: "Limited Time Offer" should be "LIMITED TIME OFFER", not "LTO"
-   - **DO NOT use pipe symbol "|" as a separator** - use dashes "-", commas ",", or blend naturally
-   - The promotion should blend smoothly with the headline, not look like a separate element
+5. PROMOTION TEXT - CRITICAL - NEVER ABBREVIATE:
+   - **THIS IS THE MOST IMPORTANT RULE: EVERY WORD IN THE PROMOTION MUST BE FULLY SPELLED OUT**
+   - If the promotion is "30% OFF WINTER SALE", you MUST render ALL FOUR WORDS: "30%" + "OFF" + "WINTER" + "SALE"
+   - **ABSOLUTELY FORBIDDEN - NEVER DO THESE:**
+     * "W" instead of "WINTER" - THIS IS WRONG
+     * "S" instead of "SALE" - THIS IS WRONG  
+     * "O" instead of "OFF" - THIS IS WRONG
+     * ANY single letter replacing ANY word - THIS IS WRONG
+   - **WRONG EXAMPLES (NEVER RENDER THESE):**
+     * "30% W SALE" - WRONG (Winter is abbreviated)
+     * "30% OFF W SALE" - WRONG (Winter is abbreviated)
+     * "30% O W S" - WRONG (all words abbreviated)
+     * "NATURAL ELEGANCE, 30% W SALE" - WRONG (Winter abbreviated)
+   - **CORRECT EXAMPLES (DO THESE):**
+     * "30% OFF WINTER SALE" - CORRECT (all words spelled out)
+     * "NATURAL ELEGANCE, 30% OFF WINTER SALE" - CORRECT
+     * "CRAFTED BEAUTY - 30% OFF WINTER SALE" - CORRECT
+   - Copy the promotion text CHARACTER BY CHARACTER - do not summarize or shorten
+   - **DO NOT use pipe symbol "|" as a separator** - use dashes or commas
+   - Check every letter before rendering - if any word is a single letter, you made a mistake
 
 6. PRICING: {"DO NOT include any pricing information, price tags, discount badges, or pricing elements anywhere in the image. Completely exclude all pricing-related visual elements." if not include_price else "Include pricing information as specified in the prompt."}
 
-7. PRODUCT: Keep the product as the hero element, styled according to the layout direction above.
+7. PRODUCT INTEGRATION - CRITICAL FOR REALISM:
+   - The product MUST look like it BELONGS in the scene, not pasted on top
+   - **LIGHTING MATCH**: The product's lighting direction, intensity, and color temperature MUST match the background
+     * If background has dramatic side lighting → product should have matching side highlights/shadows
+     * If background is warm-toned → product should have warm color cast
+     * If background is cool/dark → product should reflect that ambient tone
+   - **SHADOWS**: Add realistic ground shadows and contact shadows that anchor the product to the surface
+   - **REFLECTIONS**: If on reflective surface (marble, glass), add subtle product reflections
+   - **COLOR HARMONY**: The product should share color tones with the background environment
+   - **EDGE BLENDING**: No harsh cutout edges - product should blend naturally into the scene
+   - The goal is photorealistic compositing, as if the product was actually photographed in that setting
+   - Study professional product photography - the lighting ALWAYS matches between product and environment
+
+8. CTA BUTTON - MUST BLEND WITH BACKGROUND (NOT POP OUT):
+   - The CTA must feel INTEGRATED into the design, like it belongs there naturally
+   - CRITICAL: Match the background tone! For DARK/SMOKY backgrounds, use dark CTA styling
+   - NEVER use gold/yellow rectangles on dark backgrounds - they look cheap and out of place
+   - CREATIVE OPTIONS (choose based on background):
+     * **DARK BACKGROUNDS**: Floating text only (white/cream), frosted glass effect, subtle glow behind text, or translucent dark button
+     * **LIGHT BACKGROUNDS**: Text with underline accent, soft filled pill in muted tone, or subtle colored fill
+     * **WARM BACKGROUNDS**: Warm-toned text or very soft earth-tone fill
+   - AVOID: Bordered rectangles, contrasting colors that pop out, web-button aesthetics
+   - The CTA should look like premium brand advertising, NOT a website button pasted on
+
+9. TYPOGRAPHY - MUST BE BOLD, DISTINCTIVE, AND HIGH-IMPACT:
+   - **ABSOLUTELY FORBIDDEN**: Default system fonts, thin/light weights, basic Microsoft Word fonts, Arial, Calibri, Times New Roman vibes
+   - **HEADLINES MUST HAVE WEIGHT**: Use BOLD, BLACK, or EXTRA-BOLD weights - thin fonts look weak and forgettable
+   - **CHARACTER IS MANDATORY**: 
+     * High-contrast serifs with dramatic thick-thin stroke variation
+     * Ultra-condensed or ultra-extended proportions that command attention
+     * Distinctive display typefaces with artistic personality
+     * Strong geometric sans-serifs with confident weight
+   - **NEVER USE**: Light, thin, or regular weights for headlines - they look like placeholder text
+   - **VISUAL HIERARCHY THROUGH WEIGHT**: Headline = heaviest weight, Tagline = medium weight, CTA = confident medium-bold
+   - **LETTER-SPACING**: Headlines can use tight tracking for impact or wide tracking for elegance - NEVER default spacing
+   - The typography should be the FIRST thing that catches the eye after the product
+   - Study typography from Nike, Apple, luxury fashion brands - NEVER timid, always confident
+
+9. LAYOUT VARIETY - CRITICAL:
+   - DO NOT always use the same layout with 4 feature icons below the headline
+   - Choose DIFFERENT layouts for different ads:
+     * Minimal: Just headline + tagline + CTA (no feature icons)
+     * Editorial: Product hero with elegant text overlay
+     * Sidebar benefits: Text benefits on one side, product on other
+     * Bold statement: Large headline dominates the design
+   - For LUXURY products: NEVER use feature icons - keep it minimal and elegant
+   - Feature icons are optional and should only be used when appropriate for the brand
 
 """
         cleaned_prompt = critical_instructions + cleaned_prompt

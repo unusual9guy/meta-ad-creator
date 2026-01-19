@@ -113,11 +113,19 @@ Format your response as a structured analysis that can be used for advertising p
             # Handle response.content which can be a string or list depending on langchain version
             raw_content = response.content
             if isinstance(raw_content, list):
-                # Extract text from list of content parts
-                analysis_text = " ".join(
-                    part.get("text", str(part)) if isinstance(part, dict) else str(part)
-                    for part in raw_content
-                )
+                # Extract ONLY text from list of content parts (skip image_url and other non-text parts)
+                text_parts = []
+                for part in raw_content:
+                    if isinstance(part, dict):
+                        # Only include text content, skip image_url and other binary data
+                        if part.get("type") == "text":
+                            text_parts.append(part.get("text", ""))
+                        elif "text" in part and "image" not in str(part.get("type", "")):
+                            text_parts.append(part.get("text", ""))
+                    elif isinstance(part, str) and not part.startswith("data:image"):
+                        # Skip base64 image strings
+                        text_parts.append(part)
+                analysis_text = " ".join(text_parts)
             else:
                 analysis_text = str(raw_content) if raw_content else ""
             
@@ -285,53 +293,61 @@ Format your response as a structured analysis that can be used for advertising p
         
         # Luxury/Premium/Elegant products
         if any(kw in style_lower for kw in ["luxury", "premium", "elegant", "sophisticated", "high-end", "upscale"]):
-            font_styles["headline"] = "Elegant high-contrast serif typeface with refined thin-to-thick stroke variation, reminiscent of luxury fashion magazines like Vogue or Harper's Bazaar. Think Didot, Bodoni, or similar editorial elegance with commanding presence."
-            font_styles["tagline"] = "Light-weight sophisticated sans-serif with generous letter-spacing and refined proportions. Subtle, understated elegance that complements without competing."
-            font_styles["cta"] = "Clean, confident medium-weight sans-serif with balanced proportions. Professional and inviting without being aggressive."
-            font_styles["price"] = "Clear, modern sans-serif with medium-bold weight. Highly legible with confident, trustworthy appearance."
+            font_styles["headline"] = "BOLD high-fashion serif with dramatic thick-thin stroke contrast in BLACK or BOLD weight. Commanding presence with Art Deco grandeur - tall, impactful letterforms that demand attention. Think Vogue covers, Dior campaigns - NEVER timid, always statement-making."
+            font_styles["tagline"] = "MEDIUM-WEIGHT elegant sans-serif with refined letter-spacing. Substantial enough to be read easily, lighter than headline but still present. Not whisper-thin."
+            font_styles["cta"] = "SEMI-BOLD architectural all-caps with confident weight. Elegant but substantial - not weak or thin."
+            font_styles["price"] = "MEDIUM-WEIGHT modern serif with elegant numerals. Clear and readable, not thin."
         
         # Modern/Minimalist products
         elif any(kw in style_lower for kw in ["modern", "minimalist", "contemporary", "sleek", "clean"]):
-            font_styles["headline"] = "Clean geometric sans-serif with even stroke widths and precise letterforms. Modern, confident, and uncluttered like Swiss design principles. Think Helvetica, Futura, or Avenir aesthetic."
-            font_styles["tagline"] = "Light-weight geometric sans-serif with open letterforms and excellent readability. Minimal and refined."
-            font_styles["cta"] = "Medium-weight geometric sans-serif with clear, confident letterforms. Simple and direct."
-            font_styles["price"] = "Clean, modern sans-serif with medium weight. Precise and professional."
+            font_styles["headline"] = "BOLD geometric sans-serif with sharp edges and BLACK weight. Ultra-modern with strong presence - clean but IMPACTFUL. Think Apple keynotes but bolder. Not thin, not light - BOLD and commanding."
+            font_styles["tagline"] = "MEDIUM-WEIGHT geometric grotesque - substantial enough to read easily, modern proportions. Not featherweight, not thin."
+            font_styles["cta"] = "SEMI-BOLD geometric sans-serif with confident presence. Clean but strong."
+            font_styles["price"] = "MEDIUM-WEIGHT monospaced or tabular numerals. Technical but readable."
         
         # Rustic/Artisan/Handcrafted products
         elif any(kw in style_lower for kw in ["rustic", "artisan", "handcrafted", "handmade", "vintage", "traditional"]) or \
              any(kw in materials_lower for kw in ["wood", "leather", "ceramic", "clay", "natural"]):
-            font_styles["headline"] = "Warm, organic serif typeface with subtle hand-crafted character and authentic feel. Traditional proportions with gentle curves, evoking craftsmanship and heritage. Think Garamond, Caslon, or artisanal book typography."
-            font_styles["tagline"] = "Friendly, approachable sans-serif with warm personality and natural feel. Readable and welcoming."
-            font_styles["cta"] = "Warm, rounded sans-serif with friendly character. Inviting and approachable."
-            font_styles["price"] = "Clear, readable serif or sans-serif with warm, trustworthy character."
+            font_styles["headline"] = "BOLD hand-lettered inspired serif with HEAVY brush stroke character - like a master signpainter's work in BLACK weight. Warm but IMPACTFUL, each letter carved with confident strokes. Artisan but BOLD."
+            font_styles["tagline"] = "MEDIUM-WEIGHT humanist sans-serif with warm personality - substantial and readable, not thin or weak."
+            font_styles["cta"] = "SEMI-BOLD rounded slab-serif or warm grotesque. Friendly but substantial weight."
+            font_styles["price"] = "MEDIUM-WEIGHT vintage-inspired numerals. Character with readability."
         
-        # Bold/Contemporary/Edgy products
-        elif any(kw in style_lower for kw in ["bold", "edgy", "urban", "industrial", "strong"]):
-            font_styles["headline"] = "Bold, impactful sans-serif with strong presence and confident weight. Striking and memorable with powerful visual impact. Think Montserrat Bold, Oswald, or Impact-style typography."
-            font_styles["tagline"] = "Medium-weight condensed sans-serif with strong, confident character. Direct and purposeful."
-            font_styles["cta"] = "Bold, confident sans-serif with strong visual weight. Action-oriented and commanding."
-            font_styles["price"] = "Bold, clear sans-serif with high contrast for immediate readability."
+        # Bold/Contemporary/Edgy products (including food/spicy products)
+        elif any(kw in style_lower for kw in ["bold", "edgy", "urban", "industrial", "strong", "spicy", "intense", "powerful", "fiery"]):
+            font_styles["headline"] = "ULTRA-BLACK condensed display type with MAXIMUM weight - the heaviest font weight available. Towering, massive letterforms that DOMINATE the composition. Think billboard impact, concert poster energy. NEVER thin, ALWAYS BLACK weight."
+            font_styles["tagline"] = "BOLD condensed gothic with powerful presence - substantial weight with dynamic energy. Not light, not regular - BOLD."
+            font_styles["cta"] = "EXTRA-BOLD extended sans-serif with commanding presence. Thick, solid, impossible to ignore."
+            font_styles["price"] = "BLACK weight industrial numerals. Chunky and powerful."
         
         # Playful/Fun/Casual products
         elif any(kw in style_lower for kw in ["playful", "fun", "casual", "friendly", "cheerful", "whimsical"]):
-            font_styles["headline"] = "Rounded, friendly display typeface with warm, approachable character. Playful proportions with gentle curves that convey joy and accessibility."
-            font_styles["tagline"] = "Friendly rounded sans-serif with open letterforms and casual warmth. Approachable and engaging."
-            font_styles["cta"] = "Rounded, inviting sans-serif with friendly character. Welcoming and easy-going."
-            font_styles["price"] = "Clean, friendly sans-serif with rounded terminals. Clear and approachable."
+            font_styles["headline"] = "BOLD bouncy display type with CHUNKY round letterforms - like cheerful cartoon text with substance. BOLD weight with joyful character, not thin or weak. Think Pixar title cards - fun but SUBSTANTIAL."
+            font_styles["tagline"] = "MEDIUM-BOLD rounded sans-serif with friendly curves - readable and warm with good weight."
+            font_styles["cta"] = "SEMI-BOLD chunky rounded sans-serif - friendly but substantial. Not thin."
+            font_styles["price"] = "BOLD playful numerals with personality and readable weight."
         
         # Classic/Traditional/Timeless products
         elif any(kw in style_lower for kw in ["classic", "timeless", "heritage", "refined"]):
-            font_styles["headline"] = "Classic, well-proportioned serif typeface with balanced contrast and timeless elegance. Traditional letterforms with dignified presence, like Times, Baskerville, or Garamond."
-            font_styles["tagline"] = "Refined, readable serif or light sans-serif with classical proportions. Understated and elegant."
-            font_styles["cta"] = "Clean, balanced serif or sans-serif with classic proportions. Trustworthy and refined."
-            font_styles["price"] = "Clear, traditional serif or sans-serif with excellent legibility."
+            font_styles["headline"] = "BOLD stately transitional serif with commanding presence - heritage elegance in BLACK or BOLD weight. Like prestigious university mastheads or luxury watchmaker logos. Authoritative, never timid."
+            font_styles["tagline"] = "MEDIUM-WEIGHT refined serif or small-caps with aristocratic presence - substantial enough to read easily."
+            font_styles["cta"] = "SEMI-BOLD refined capitals with confident weight. Classic but strong."
+            font_styles["price"] = "MEDIUM-WEIGHT classic serif numerals. Distinguished and readable."
         
-        # Default fallback - Professional/Neutral
+        # Food/Culinary products (special case for your sriracha example)
+        elif any(kw in style_lower for kw in ["food", "culinary", "gourmet", "tasty", "delicious", "flavor"]) or \
+             any(kw in materials_lower for kw in ["sauce", "spice", "ingredient", "kitchen", "chef"]):
+            font_styles["headline"] = "EXTRA-BOLD appetizing display type with MAXIMUM impact - chunky BLACK weight slab-serif or ultra-condensed BLACK sans. Like butcher shop signage or bold food magazine covers. HEAVY, HUNGRY, BOLD."
+            font_styles["tagline"] = "SEMI-BOLD warm humanist sans-serif - substantial and appetizing with readable weight."
+            font_styles["cta"] = "BOLD friendly sans-serif with confident weight. Inviting and substantial."
+            font_styles["price"] = "BOLD warm numerals with friendly but strong presence."
+        
+        # Default fallback - Distinctive Professional
         else:
-            font_styles["headline"] = "Professional, well-balanced serif or sans-serif typeface with clear hierarchy and confident presence. Versatile and appropriate for quality products."
-            font_styles["tagline"] = "Clean, readable sans-serif with balanced proportions. Professional and approachable."
-            font_styles["cta"] = "Clear, confident medium-weight sans-serif. Direct and professional."
-            font_styles["price"] = "Clean, modern sans-serif with clear legibility."
+            font_styles["headline"] = "BOLD distinctive display typeface with HEAVY weight - BLACK or EXTRA-BOLD minimum. NOT generic thin fonts. Choose: condensed BLACK gothic for impact, BOLD modern serif for sophistication, or HEAVY grotesque with personality. NEVER weak or thin."
+            font_styles["tagline"] = "MEDIUM-BOLD complementary type - substantial weight that supports the headline without competing."
+            font_styles["cta"] = "SEMI-BOLD confident all-caps with intentional weight and letter-spacing."
+            font_styles["price"] = "MEDIUM-BOLD modern numerals with clear readability."
         
         return font_styles
     

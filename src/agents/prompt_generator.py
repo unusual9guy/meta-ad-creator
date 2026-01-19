@@ -203,22 +203,32 @@ Use typography that matches these style descriptions. The AI should render text 
         # Build headline instruction text based on whether promotion is included
         if promotion_text:
             promotion_text_verbatim = promotion_text.upper()
+            # Extract individual words for explicit instruction
+            promo_words = promotion_text_verbatim.split()
+            word_by_word = " + ".join([f'"{w}"' for w in promo_words])
+            
             headline_instruction = (
                 f'[GENERATE A UNIQUE HEADLINE SPECIFIC TO THIS PRODUCT - Based on the product description, create a compelling headline that: '
                 f'1) Highlights what makes THIS specific product special, '
                 f'2) Speaks directly to the target audience\'s desires, '
                 f'3) Is NOT generic like \\\'Elegance Unveiled\\\' or \\\'Timeless Beauty\\\' - make it SPECIFIC to this product category and features, '
                 f'4) Could only work for THIS type of product, '
-                f'5) **CRITICAL: MUST INCLUDE THE PROMOTION TEXT IN THE HEADLINE VERBATIM** - Integrate the promotion text "{promotion_text_verbatim}" smoothly and naturally into the headline. '
-                f'**ABSOLUTELY CRITICAL RULES FOR PROMOTION TEXT:** '
-                f'- Use the EXACT, COMPLETE promotion text provided - do NOT abbreviate, truncate, or shorten ANY words. '
-                f'- If the text is "30% Winter Sale", you MUST use "30% WINTER SALE" (full text with all words) - NEVER "30% W SALE" or any abbreviation. '
-                f'- NEVER abbreviate "Winter" to "W" or "Sale" to "S" - keep every word fully spelled out. '
-                f'- **DO NOT use the pipe symbol "|" as a separator.** '
-                f'- Blend the promotion smoothly using a dash "-", a comma ",", or natural phrasing without separators. '
-                f'Examples of GOOD integration: "ILLUMINATE WITH GRACE - 30% WINTER SALE" or "ELEVATE YOUR SPACE, 30% WINTER SALE" or "PREMIUM QUALITY 30% WINTER SALE". '
-                f'Examples of BAD integration: "ELEVATE YOUR SPACE | 30% W SALE" (pipe + abbreviation - NOT allowed). '
-                f'The promotion must flow naturally within the headline text and must be fully spelled out with ALL words intact.]'
+                f'5) **ABSOLUTELY CRITICAL - PROMOTION TEXT MUST BE INCLUDED WORD-FOR-WORD:** '
+                f'The promotion text is: "{promotion_text_verbatim}" '
+                f'You MUST include EVERY SINGLE WORD: {word_by_word}. '
+                f'**FORBIDDEN ABBREVIATIONS - DO NOT DO THESE:** '
+                f'- "W" instead of "WINTER" - WRONG '
+                f'- "S" instead of "SALE" - WRONG '
+                f'- "O" instead of "OFF" - WRONG '
+                f'- Any single letter replacing a full word - WRONG '
+                f'**CORRECT EXAMPLE:** If promotion is "30% OFF WINTER SALE", the headline MUST contain the COMPLETE phrase "30% OFF WINTER SALE" with ALL FOUR WORDS spelled out fully. '
+                f'**WRONG EXAMPLES (NEVER DO THESE):** '
+                f'- "30% W SALE" - WRONG (missing OFF, Winter abbreviated) '
+                f'- "30% OFF W SALE" - WRONG (Winter abbreviated) '
+                f'- "30% O W S" - WRONG (all words abbreviated) '
+                f'**DO NOT use the pipe symbol "|" as a separator.** '
+                f'Blend the promotion smoothly using a dash "-", a comma ",", or natural phrasing. '
+                f'Example: "NATURAL ELEGANCE, {promotion_text_verbatim}" or "CRAFTED BEAUTY - {promotion_text_verbatim}"]'
             )
         else:
             headline_instruction = (
@@ -287,9 +297,9 @@ PROFESSIONAL QUALITY STANDARDS:
     "layout_approach": "{selected_layout}",
     "mood": "{selected_mood}"
   }},
-  "product_usage": "The provided product image has no background. Create the background following this direction: {selected_background}. Do NOT modify, redesign, or alter the product itself - only add appropriate background and lighting that matches the creative direction.",
+  "product_usage": "The provided product image has no background. Create the background following this direction: {selected_background}. CRITICAL: The product must look like it was PHOTOGRAPHED in this scene, not pasted on top.",
   "visual": {{
-    "shot_type": "hero product shot with cinematic quality",
+    "shot_type": "hero product shot with cinematic quality - photorealistic compositing",
     "highlight": "Showcase the product's unique texture, material, and key design features. Make it look desirable and premium.",
     "background": {{
       "style": "{selected_background}",
@@ -297,7 +307,17 @@ PROFESSIONAL QUALITY STANDARDS:
       "props": "Only include props if they enhance the lifestyle context. Each prop should feel intentional and premium. Less is more."
     }},
     "appearance": "The final image must look like it was shot by a professional photographer and art-directed by a creative director. Think Apple product shots, Dyson campaigns, luxury brand catalogs. No template feel, no stock photo aesthetic.",
-    "lighting": "Cinematic, intentional lighting that creates mood and dimension. Soft key light with subtle fill. Shadows should be realistic and grounded. The lighting should match the mood: {selected_mood}"
+    "lighting": "Cinematic, intentional lighting that creates mood and dimension. The lighting should match the mood: {selected_mood}",
+    "product_lighting_integration": {{
+      "CRITICAL_REQUIREMENT": "The product lighting MUST perfectly match the background environment lighting",
+      "lighting_direction": "If background has light coming from left, product must have highlights on left and shadows on right. MATCH the light source direction.",
+      "color_temperature": "Product must share the same color temperature as background - warm backgrounds need warm product tones, cool backgrounds need cool product tones",
+      "shadows": "Add realistic ground shadow and contact shadow that anchors product to the surface. Shadow direction must match lighting direction.",
+      "reflections": "If surface is reflective (marble, glossy), add subtle product reflections",
+      "ambient_occlusion": "Soft darkening where product meets surface for natural grounding",
+      "color_spill": "Background colors should subtly reflect onto product edges for natural integration",
+      "edge_treatment": "No harsh cutout edges - product edges should naturally blend with environment lighting"
+    }}
   }},
   "product_placement": {{
     "layout_direction": "{selected_layout}",
@@ -306,8 +326,15 @@ PROFESSIONAL QUALITY STANDARDS:
     "shadow": "Realistic, grounded shadow that matches the lighting direction. Not floating, not too harsh, not too soft."
   }},
   "typography_and_layout": {{
-    "style": "Premium typography that matches the mood: {selected_mood}. Every text element should feel deliberately designed. Use proper typographic hierarchy.",
-    "visual_hierarchy": "Clear hierarchy: Headline (largest, boldest) → Tagline (supporting) → Features (if included) → Price/CTA (action-driving). Balance with product placement.",
+    "style": "BOLD, IMPACTFUL typography that matches the mood: {selected_mood}. Every text element should feel deliberately designed with WEIGHT and PRESENCE.",
+    "font_weight_requirements": {{
+      "CRITICAL": "Headlines MUST use BOLD, BLACK, or EXTRA-BOLD font weights - thin/light fonts look weak and forgettable",
+      "headline_weight": "BLACK, BOLD, or EXTRA-BOLD - never regular or light weight",
+      "tagline_weight": "MEDIUM or SEMI-BOLD - substantial but lighter than headline",
+      "cta_weight": "MEDIUM-BOLD or BOLD - confident and action-driving",
+      "FORBIDDEN": "Regular, Light, Thin, or default font weights for headlines - they look like placeholder text"
+    }},
+    "visual_hierarchy": "Clear hierarchy through WEIGHT and SIZE: Headline (largest, HEAVIEST weight) → Tagline (supporting, medium weight) → Features (if included) → Price/CTA (action-driving). Balance with product placement.",
     "ratio": "MANDATORY 1:1 SQUARE (1080 x 1080 px) - Width MUST equal Height",
     "text_elements": [
       {{
@@ -362,37 +389,28 @@ PROFESSIONAL QUALITY STANDARDS:
         "hierarchy": "secondary"
       }},
       {{
-        "type": "features",
-        "items": [
-          {{"icon": "icon_name", "text": "[FEATURE 1]"}},
-          {{"icon": "icon_name", "text": "[FEATURE 2]"}},
-          {{"icon": "icon_name", "text": "[FEATURE 3]"}},
-          {{"icon": "icon_name", "text": "[FEATURE 4]"}}
-        ],
-        "placement": {{
-          "position": "bottom",
-          "y_offset": -120
-        }},
-        "style": {{
-          "layout": "horizontal",
-          "spacing": "even"
-        }}
-      }},
-      {{
         "type": "cta_button",
-        "text": "[GENERATE CTA TEXT - e.g., 'SHOP NOW', 'Shop The Collection']",
+        "text": "[GENERATE CTA TEXT - e.g., 'SHOP NOW', 'DISCOVER MORE', 'GET YOURS', 'EXPLORE', 'ORDER NOW', 'BUY TODAY']",
         "typography_style": "{cta_style}",
         "placement": {{
           "position": "bottom-center",
           "y_offset": {120 if include_price else 80}
         }},
         "style": {{
-          "background_color": "#D2B48C",
-          "text_color": "#2C2C2C",
-          "border_radius": 8,
-          "padding": "12px 32px"
+          "approach": "[CHOOSE ONE CREATIVE APPROACH based on background:
+            - 'FLOATING_TEXT': Just elegant text with subtle shadow, no button shape at all - blends with background
+            - 'UNDERLINE_ACCENT': Text with a thin decorative underline in accent color matching the design
+            - 'FROSTED_GLASS': Semi-transparent frosted glass effect that shows through to the background
+            - 'GRADIENT_FADE': Soft gradient button that fades into the background edges
+            - 'SPOTLIGHT': Subtle glow or soft highlight behind text, like a spotlight effect
+            - 'ORGANIC_SHAPE': Soft, asymmetric organic blob shape behind text, not a rigid rectangle
+            - 'INTEGRATED_BANNER': Text flows as part of a subtle horizontal band that matches the background tone]",
+          "background_treatment": "[MUST MATCH THE AD BACKGROUND - For dark backgrounds use dark semi-transparent or no background. For light backgrounds use light tones. NEVER use contrasting gold/yellow on dark backgrounds - that looks cheap and out of place]",
+          "text_color": "[For dark backgrounds: white, cream, or soft warm white. For light backgrounds: charcoal, dark brown, or deep gray. MUST have good contrast but feel natural]",
+          "border": "NONE - avoid borders entirely, they look like web buttons",
+          "effect": "[Optional subtle effects: soft drop shadow, gentle glow, blur behind, or none for clean look]"
         }},
-        "instruction": "Place the CTA button BELOW the product with sufficient spacing. Ensure it does NOT overlap with the product. Position it at least 80-120px from the bottom edge, depending on whether pricing is included. The button should be clearly separated from the product. Use the specified typography style for the button text."
+        "instruction": "CRITICAL CTA RULES: 1) The CTA must BLEND with the background, not pop out like a cheap web button. 2) For DARK backgrounds (like the smoky/dramatic ones), use text-only, frosted glass, or subtle spotlight - NEVER bright colored rectangles. 3) The CTA should feel like it was designed by a premium brand's creative team, not pasted from a website template. 4) Match the mood: dramatic backgrounds need subtle CTAs, bright backgrounds can have slightly more visible CTAs."
       }}
     ],
 {price_section}
@@ -414,17 +432,16 @@ PROFESSIONAL QUALITY STANDARDS:
   }},
           "critical_mandates": [
     "**MANDATORY ASPECT RATIO - FIRST PRIORITY:** Generate the image in EXACTLY 1:1 aspect ratio (SQUARE format). Output dimensions MUST be 1080x1080 pixels. Width MUST equal height. Do NOT generate landscape or portrait images. This is a Meta ad creative requirement.",
-            "**Absolute Rule:** Never change, redraw, or redesign the product. Use its real colors, structure, and features only.",
-    "**Background:** Create solid neutral background (light beige #F5F5DC, light brown #D2B48C, or off-white) OR blurred natural setting with 40-50% depth of field blur. No patterns, textures, or gradients in solid backgrounds.",
-    "**Product Positioning:** Position product off-center (60% from left OR 40% from left), at 50% from top, occupying 65% of canvas height. Add subtle shadow: soft, diffused, 5-10px blur, 20% opacity, offset 3-5px downward.",
-    "**Typography - CRITICAL FONT USAGE RULE:** The 'font' field in each text element is a TECHNICAL SPECIFICATION telling you which font to USE for rendering. It is NOT text to display. NEVER print font names like 'Tan Pearl', 'Calgary', or 'RoxboroughCF' as visible text in the image. Generate UNIQUE product headlines based on what the product actually is. Example: For a photo frame, use the font to render 'FRAME YOUR STORY' - do NOT display the font name as text.",
-    "**Text Placement:** Headline at top-center (80px from top), tagline below headline (140px from top), features at bottom (120px from bottom), CTA button at bottom-center with proper spacing from product. Maintain 10% margin from edges.",
-    "**Feature Icons:** Create 3-5 feature items with simple line-art icons and descriptive text. Arrange horizontally at bottom section. Icons: 40-50px, text: 16-20px font size. Even spacing across width.",
-    "**CTA Button:** Rounded corners (8px), contrasting background color (#D2B48C or #2C2C2C), white or dark text, centered at bottom. Font size: 18-24px. Padding: 12px 32px. **CRITICAL: Position the CTA button BELOW the product with at least 60-80px gap to prevent overlap. The button must be clearly separated from the product and not overlap with it.**",
+    "**Absolute Rule:** Never change, redraw, or redesign the product. Use its real colors, structure, and features only.",
+    "**Background:** Follow the creative direction specified above. Use colors from the provided palette: {color_palette_str}. Create depth and atmosphere that matches the brand positioning.",
+    "**Product Positioning:** Position product dynamically based on layout direction. Add subtle, realistic shadow that matches the lighting.",
+    "**Typography - CRITICAL FONT USAGE RULE:** The 'font' field in each text element is a TECHNICAL SPECIFICATION telling you which font to USE for rendering. It is NOT text to display. NEVER print font names as visible text in the image.",
+    "**LAYOUT VARIETY - CRITICAL:** Each ad should have a UNIQUE layout. DO NOT always use the same icon+text feature grid. Choose ONE of these approaches randomly: (1) Headline + tagline only - minimal, (2) Headline + benefit bullets on the side, (3) Large headline with integrated message, (4) Split layout with text on one side, (5) Feature icons ONLY if it fits the brand positioning. Luxury brands should NEVER have feature icons.",
+    "**CTA Button - MUST MATCH AESTHETIC:** The button color MUST harmonize with the overall design. Use colors from the palette: {color_palette_str}. For warm backgrounds, use warm button colors. For dark themes, use sophisticated dark or gold buttons. NEVER use a jarring white or random color that doesn't match.",
     "{pricing_mandate}",
-    "**Spelling:** CRITICAL - PERFECT spelling and grammar. AI image generation often has spelling errors - be extra careful. Review all text before including in JSON.",
-    "**Output Format - SQUARE IMAGE:** Generate final image in 1:1 aspect ratio (1080x1080 pixels). The image MUST be square. Product must be perfectly composed within this square frame.",
-    "**Professional Quality:** The image should look like professional product photography, not AI-generated. Use realistic lighting, natural shadows, and authentic composition."
+    "**Spelling:** CRITICAL - PERFECT spelling and grammar. AI image generation often has spelling errors - be extra careful.",
+    "**Output Format - SQUARE IMAGE:** Generate final image in 1:1 aspect ratio (1080x1080 pixels). The image MUST be square.",
+    "**Professional Quality:** The image should look like professional product photography by a human designer, not AI-generated. Every element must feel intentionally placed and cohesive."
   ]
 }}
 
@@ -488,12 +505,14 @@ TEXT GENERATION REQUIREMENTS:
 - LUXURY BRAND APPROACH (think Hermès, Dior, Chanel, Bang & Olufsen):
   • Use muted, sophisticated color palette - no bright or garish colors
   • Generous negative space - let the product breathe
-  • Minimal text - the product is the hero
+  • Minimal text - the product is the hero (headline + tagline ONLY)
   • Elegant, refined serif typography for headlines
   • Subtle, understated messaging - avoid exclamation marks
   • Premium materials feel - marble, gold accents, soft shadows
   • Editorial, magazine-quality aesthetic
-  • Avoid: Discount badges, loud CTAs, busy layouts, bright colors""",
+  • CTA button: Subtle, elegant - use dark colors or gold, pill-shaped or thin border
+  • **NEVER use feature icons or bullet points** - too busy for luxury
+  • Avoid: Discount badges, loud CTAs, busy layouts, bright colors, feature grids""",
             
             "ASPIRATIONAL": """
 - ASPIRATIONAL BRAND APPROACH (think Coach, Michael Kors, Samsung):
@@ -503,6 +522,8 @@ TEXT GENERATION REQUIREMENTS:
   • Modern serif or refined sans-serif typography
   • Quality feel without being unapproachable
   • Lifestyle context that feels attainable
+  • CTA button: Modern, clean - match the palette, subtle contrast
+  • Feature display: Optional - if used, keep minimal (2-3 max), text only or subtle icons
   • Avoid: Overly exclusive language, too minimal, cheap-looking elements""",
             
             "SPORTY": """
@@ -513,18 +534,21 @@ TEXT GENERATION REQUIREMENTS:
   • Action-oriented language and imagery
   • High energy, motivational mood
   • Dynamic compositions with movement
+  • CTA button: Bold, high-contrast, punchy - can be bright accent color
+  • Feature display: Can use bold stats, numbers, or action phrases
   • Avoid: Subtle, muted colors, passive language, static layouts""",
             
             "HEALTH_WELLNESS": """
 - HEALTH/WELLNESS BRAND APPROACH (like clean supplement brands):
   • Fresh, clean aesthetic with calming colors
   • Trust-building design elements
-  • Benefit-focused messaging with icons/bullets
+  • Benefit-focused messaging - can use icons OR bullet points OR integrated text
   • Clear, readable sans-serif typography
   • Natural, pure, healthy mood
-  • Can include benefit icons or feature highlights
+  • CTA button: Clean, trustworthy - greens, blues, or warm neutrals
+  • Feature display: Icons with benefits work well here, but vary the layout
   • Split-screen comparisons work well for problem-solution messaging
-  • Avoid: Unsubstantiated claims, clinical coldness, busy layouts""",
+  • Avoid: Unsubstantiated claims, clinical coldness, cluttered layouts""",
             
             "PLAYFUL": """
 - PLAYFUL/FUN BRAND APPROACH:
@@ -533,6 +557,8 @@ TEXT GENERATION REQUIREMENTS:
   • Energetic, joyful mood
   • Playful compositions with personality
   • Approachable, friendly tone
+  • CTA button: Fun, rounded (pill-shaped), bright accent colors
+  • Feature display: Can be playful - fun icons, badges, or skip features entirely
   • Can include fun shapes, patterns, or illustrations
   • Avoid: Serious, corporate aesthetics, muted colors""",
             
@@ -543,8 +569,10 @@ TEXT GENERATION REQUIREMENTS:
   • Balanced between professional and approachable
   • Lifestyle context that feels relatable
   • Clear messaging with benefit highlights
+  • CTA button: Clean, balanced - use palette colors, moderate contrast
+  • Feature display: VARY each time - sometimes icons, sometimes text only, sometimes none
   • Warm, inviting mood or bold value-focused
-  • Avoid: Overly cheap-looking designs, cluttered layouts, confusing hierarchy"""
+  • Avoid: Overly cheap-looking designs, cluttered layouts, confusing hierarchy, same layout every time"""
         }
         
         return guidelines.get(brand_positioning, guidelines["MASS CONSUMER"])
@@ -715,8 +743,30 @@ CRITICAL REQUIREMENTS FOR UNIQUE TEXT GENERATION:
 
 **OTHER REQUIREMENTS:**
 - Use EXACTLY the fonts specified above
-- Features: Generate 3-5 product-specific features based on the actual product
-- CTA: Create compelling call-to-action text. **CRITICAL: Position the CTA button BELOW the product with sufficient spacing (at least 60-80px gap). The button must NOT overlap with the product. Ensure clear separation between product and button.**
+
+**LAYOUT VARIETY - CRITICAL (DO NOT USE THE SAME LAYOUT EVERY TIME):**
+- Choose ONE of these layouts randomly for each ad:
+  1. **MINIMAL**: Headline + tagline only, no feature icons (best for luxury, aspirational)
+  2. **BENEFIT SIDEBAR**: Product on one side, 2-3 text benefits on the other (no icons)
+  3. **FEATURE ICONS**: 3-4 icons with text below product (only for health/wellness or consumer goods)
+  4. **BOLD STATEMENT**: Large headline dominates, small tagline, prominent CTA
+  5. **EDITORIAL**: Product hero with elegant text overlay, magazine-style
+- For LUXURY products: NEVER use feature icons - use minimal or editorial layouts only
+- The layout should feel FRESH and UNIQUE each time
+
+**CTA BUTTON - MUST BE ELEGANT (NOT BOXY):**
+- AVOID boxy rectangular buttons with harsh borders - they look like cheap UI elements
+- Button should feel like part of the artistic design, NOT a button pasted on top
+- PREFERRED STYLES:
+  * Pill-shaped with soft fill, no border
+  * Subtle rounded rectangle with solid fill, no outline
+  * Elegant text-only CTA (no button background)
+  * If using border, make it very thin (1px) and subtle
+- For warm/earthy backgrounds: solid warm-colored button (NO harsh dark borders)
+- For dark/luxury: text-only or very subtle transparent button
+- For bright/sporty: bold filled button with rounded corners
+- The CTA should look like premium brand advertising, NOT a website button
+
 - Ensure ALL text has correct spelling and grammar
 - Place text elements strategically based on the layout direction
 {promotion_info and f"- Promotion: The promotion text '{promotion_text}' is already integrated into the headline - do NOT duplicate it elsewhere" or ""}
@@ -759,11 +809,19 @@ CRITICAL JSON FORMATTING:
             # Handle response.content which can be a string or list depending on langchain version
             raw_content = response.content
             if isinstance(raw_content, list):
-                # Extract text from list of content parts
-                prompt_text = " ".join(
-                    part.get("text", str(part)) if isinstance(part, dict) else str(part)
-                    for part in raw_content
-                )
+                # Extract ONLY text from list of content parts (skip image_url and other non-text parts)
+                text_parts = []
+                for part in raw_content:
+                    if isinstance(part, dict):
+                        # Only include text content, skip image_url and other binary data
+                        if part.get("type") == "text":
+                            text_parts.append(part.get("text", ""))
+                        elif "text" in part and "image" not in str(part.get("type", "")):
+                            text_parts.append(part.get("text", ""))
+                    elif isinstance(part, str) and not part.startswith("data:image"):
+                        # Skip base64 image strings
+                        text_parts.append(part)
+                prompt_text = " ".join(text_parts)
             else:
                 prompt_text = str(raw_content) if raw_content else ""
 
@@ -816,27 +874,81 @@ CRITICAL JSON FORMATTING:
 
             # Normalize to uppercase for matching
             full_upper = full_text.upper()
-
-            # Common bad patterns: "W SALE", "W SALE.", "W SALE\"", "W SALE'", etc.
-            bad_patterns = [
-                r'\bW\s+SALE\b',
-                r'\bW\s+SALE\b[\.!",\']?'
-            ]
-
+            
+            # Extract the percentage if present (e.g., "30%" from "30% Off Winter Sale")
+            percent_match = re.search(r'(\d+%)', full_upper)
+            percentage = percent_match.group(1) if percent_match else ""
+            
             cleaned = prompt_text
 
-            # Direct substitution of bad patterns with full text
-            for pat in bad_patterns:
-                cleaned = re.sub(pat, full_upper, cleaned, flags=re.IGNORECASE)
-
-            # If truncated after the percent (e.g., "30% W SALE"), replace the whole clause with full text
-            cleaned = re.sub(r'\b\d+%\s+W\s+SALE\b', full_upper, cleaned, flags=re.IGNORECASE)
-
-            # Replace any occurrence of the promotion text but abbreviated (heuristic): "% W " or "%W "
-            cleaned = re.sub(r'\b(\d+%)\s*W\s*SALE\b', lambda m: f"{m.group(1)} {full_upper.split(' ', 1)[-1] if ' ' in full_upper else full_upper}", cleaned, flags=re.IGNORECASE)
+            # Pattern 1: Any form of "XX% W SALE" or "XX% W Sale" (abbreviated Winter)
+            # Should become the full promotion text
+            cleaned = re.sub(
+                r'\b(\d+%)\s*(OFF\s+)?W\s+SALE\b',
+                full_upper,
+                cleaned,
+                flags=re.IGNORECASE
+            )
+            
+            # Pattern 2: Just "W SALE" without percentage
+            cleaned = re.sub(
+                r'\bW\s+SALE\b',
+                full_upper,
+                cleaned,
+                flags=re.IGNORECASE
+            )
+            
+            # Pattern 3: "XX% O W S" or other heavily abbreviated forms
+            if percentage:
+                cleaned = re.sub(
+                    rf'{re.escape(percentage)}\s*O\s*W\s*S\b',
+                    full_upper,
+                    cleaned,
+                    flags=re.IGNORECASE
+                )
+            
+            # Pattern 4: Any single-letter abbreviations of words in the promo
+            # e.g., "30% O WINTER SALE" should become full text
+            if percentage and "OFF" in full_upper:
+                cleaned = re.sub(
+                    rf'{re.escape(percentage)}\s*O\s+WINTER\s+SALE\b',
+                    full_upper,
+                    cleaned,
+                    flags=re.IGNORECASE
+                )
+            
+            # Pattern 5: Missing "OFF" - e.g., "30% WINTER SALE" when full text has "OFF"
+            if "OFF" in full_upper and percentage:
+                # Check if the text has the percentage + WINTER SALE but missing OFF
+                cleaned = re.sub(
+                    rf'{re.escape(percentage)}\s+WINTER\s+SALE\b(?!\s)',
+                    full_upper,
+                    cleaned,
+                    flags=re.IGNORECASE
+                )
+            
+            # Pattern 6: Common truncation patterns with commas
+            cleaned = re.sub(
+                r',\s*\d+%\s*(OFF\s+)?W\s+SALE\b',
+                f', {full_upper}',
+                cleaned,
+                flags=re.IGNORECASE
+            )
+            
+            # Pattern 7: With dash separator
+            cleaned = re.sub(
+                r'-\s*\d+%\s*(OFF\s+)?W\s+SALE\b',
+                f'- {full_upper}',
+                cleaned,
+                flags=re.IGNORECASE
+            )
 
             # Final pass: if promotion text exists in lowercase/partial, enforce full uppercase verbatim
             cleaned = cleaned.replace(full_text, full_upper)
+            
+            # Also replace any remaining abbreviated patterns specific to "Winter"
+            if "WINTER" in full_upper:
+                cleaned = re.sub(r'\bW\s+SALE\b', "WINTER SALE", cleaned, flags=re.IGNORECASE)
 
             return cleaned
         except Exception:
