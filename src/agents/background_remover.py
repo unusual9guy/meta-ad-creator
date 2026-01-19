@@ -77,7 +77,7 @@ class BackgroundRemoverAgent:
             
             # Call Nano Banana model
             response = self.client.models.generate_content(
-                model="gemini-2.5-flash-image-preview",
+                model="gemini-2.5-flash-image",
                 contents=[prompt, image],
             )
             
@@ -106,7 +106,7 @@ class BackgroundRemoverAgent:
                     "result_text": result_text,
                     "image_generated": False,
                     "metadata": {
-                        "model_used": "gemini-2.5-flash-image-preview",
+                        "model_used": "gemini-2.5-flash-image",
                         "operation": "background_removal"
                     }
                 }
@@ -119,7 +119,7 @@ class BackgroundRemoverAgent:
                 "result_text": result_text,
                 "image_generated": True,
                 "metadata": {
-                    "model_used": "gemini-2.5-flash-image-preview",
+                    "model_used": "gemini-2.5-flash-image",
                     "operation": "background_removal"
                 }
             }
@@ -131,7 +131,7 @@ class BackgroundRemoverAgent:
                 "output_path": None,
                 "image_generated": False,
                 "metadata": {
-                    "model_used": "gemini-2.5-flash-image-preview",
+                    "model_used": "gemini-2.5-flash-image",
                     "operation": "background_removal"
                 }
             }

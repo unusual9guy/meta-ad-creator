@@ -35,7 +35,7 @@ class PromptGeneratorAgent:
             raise ValueError("Google API key is required. Set GOOGLE_API_KEY_PROMPT or GOOGLE_API_KEY environment variable.")
         
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash-image-preview",
+            model="gemini-2.5-flash-image",
             google_api_key=self.api_key,
             temperature=0.95,  # Higher temperature for more creative variety
             max_tokens=3000  # Increased to prevent JSON truncation
