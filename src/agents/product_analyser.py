@@ -29,7 +29,7 @@ class ProductAnalyserAgent:
             raise ValueError("Google API key is required. Set GOOGLE_API_KEY_ANALYSER or GOOGLE_API_KEY environment variable.")
         
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash-image-preview",
+            model="gemini-2.5-flash-image",
             google_api_key=self.api_key,
             temperature=0.7,
             max_tokens=2000
@@ -138,7 +138,7 @@ Format your response as a structured analysis that can be used for advertising p
                 "structured_analysis": structured_analysis,
                 "metadata": {
                     "image_path": image_path,
-                    "model_used": "gemini-2.5-flash-image-preview"
+                    "model_used": "gemini-2.5-flash-image"
                 }
             }
             

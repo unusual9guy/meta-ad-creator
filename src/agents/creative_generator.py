@@ -358,10 +358,10 @@ CRITICAL INSTRUCTIONS FOR IMAGE GENERATION:
                 # Fallback to Gemini 2.5 Flash
                 try:
                     response = self.client.models.generate_content(
-                        model="gemini-2.5-flash-image-preview",
+                        model="gemini-2.5-flash-image",
                         contents=contents,
                     )
-                    model_name = "gemini-2.5-flash-image-preview"
+                    model_name = "gemini-2.5-flash-image"
                 except Exception as fallback_error:
                     # If both fail, raise the original error
                     raise pro_error
