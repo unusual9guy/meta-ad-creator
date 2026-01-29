@@ -33,3 +33,5 @@ Thumbs.db
 
 # Templates (before example images)
 /templates/
+
+/docs/web-app-roadmap.md
