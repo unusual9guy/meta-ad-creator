@@ -9,6 +9,7 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -111,13 +112,22 @@ export default function SignUpPage() {
           </label>
           <input
             id="password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             autoComplete="new-password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="mt-2 block w-full rounded-md border border-surface-border bg-white px-4 py-2.5 text-ink placeholder:text-ink-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           />
+          <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-ink-muted">
+            <input
+              type="checkbox"
+              checked={showPassword}
+              onChange={(e) => setShowPassword(e.target.checked)}
+              className="h-4 w-4 rounded border-surface-border text-brand focus:ring-brand"
+            />
+            Show password
+          </label>
         </div>
         <div>
           <label htmlFor="confirmPassword" className="block text-sm font-medium text-ink">
@@ -125,7 +135,7 @@ export default function SignUpPage() {
           </label>
           <input
             id="confirmPassword"
-            type="password"
+            type={showPassword ? "text" : "password"}
             autoComplete="new-password"
             required
             value={confirmPassword}

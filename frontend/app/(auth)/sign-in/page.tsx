@@ -8,6 +8,7 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -77,18 +78,27 @@ export default function SignInPage() {
           </label>
           <input
             id="password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             autoComplete="current-password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="mt-2 block w-full rounded-md border border-surface-border bg-white px-4 py-2.5 text-ink placeholder:text-ink-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           />
-          <p className="mt-2 text-right">
+          <div className="mt-2 flex items-center justify-between">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-muted">
+              <input
+                type="checkbox"
+                checked={showPassword}
+                onChange={(e) => setShowPassword(e.target.checked)}
+                className="h-4 w-4 rounded border-surface-border text-brand focus:ring-brand"
+              />
+              Show password
+            </label>
             <Link href="/forgot-password" className="text-sm text-brand hover:underline">
               Forgot password?
             </Link>
-          </p>
+          </div>
         </div>
         <button
           type="submit"
