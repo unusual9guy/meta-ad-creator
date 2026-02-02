@@ -4,3 +4,4 @@ uvicorn[standard]>=0.32.0
 supabase>=2.10.0
 python-dotenv>=1.0.0
 pyjwt>=2.9.0
+requests>=2.31.0
