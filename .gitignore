@@ -23,6 +23,7 @@ ENV/
 .DS_Store
 Thumbs.db
 
+.gitignore
 
 # Final creatives
 /Final_creatives/
@@ -57,3 +58,11 @@ frontend/.vercel/
 
 # Supabase
 supabase/
+
+AGENTS.md
+CLAUDE.md
+/docs
+/plans
+.agents 
+.claude 
+scripts 
